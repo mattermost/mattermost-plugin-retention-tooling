@@ -1,4 +1,4 @@
-# Mattermost Rentention Tooling plugin ![CI](https://github.com/mickmister/mattermost-plugin-retention-tooling/actions/workflows/ci.yml/badge.svg)
+# Mattermost Rentention Tooling plugin ![CI](https://github.com/mattermost/mattermost-plugin-retention-tooling/actions/workflows/ci.yml/badge.svg)
 
 This plugin provides data rentention tools to augment the [data retention capabilities](https://docs.mattermost.com/comply/data-retention-policy.html) of Mattermost Enterprise Edition.
 
@@ -6,7 +6,17 @@ This plugin provides data rentention tools to augment the [data retention capabi
 
 ### De-activated User Clean-up
 
-TODO
+Removes a specified user from all teams and channels, meant to be used after a user is deactivated.
+
+The process is started by sending an HTTP POST request to the Mattermost server at `/plugins/deactivated-user-cleanup/remove_user_from_all_teams_and_channels`. It accepts either of the following JSON request bodies:
+
+```
+{"user_id": "someuserid"}
+
+{"username": "someusername"}
+```
+
+The user submitting the HTTP request must be a system admin.
 
 ### Channel Archiver
 
