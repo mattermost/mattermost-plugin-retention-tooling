@@ -9,6 +9,9 @@ on:
       - "v*"
   pull_request:
 
+env:
+  go-version: "1.20.7"
+
 permissions:
   contents: read
 
