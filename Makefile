@@ -189,9 +189,6 @@ detach: setup-attach
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
 test: test-server webapp/node_modules test-webapp 
-ifneq ($(wildcard ./build/sync/plan/.),)
-	cd ./build/sync && $(GO) test -v $(GO_TEST_FLAGS) ./...
-endif
 
 ## Runs unit tests defined for the server
 .PHONY: test-server
