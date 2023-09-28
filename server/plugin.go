@@ -100,7 +100,7 @@ func (p *Plugin) OnDeactivate() error {
 
 func (p *Plugin) ExecuteCommand(_ *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	split := strings.Fields(args.Command)
-	cmd, _ := strings.CutPrefix(split[0], "/")
+	cmd, _ := CutPrefix(split[0], "/")
 
 	var response *model.CommandResponse
 	var err error

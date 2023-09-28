@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,6 +15,8 @@ import (
 	"github.com/mattermost/mattermost-server/v6/store/storetest"
 	"github.com/mattermost/mattermost-server/v6/testlib"
 )
+
+var onceStartDocker sync.Once
 
 type TestHelper struct {
 	mainHelper *testlib.MainHelper
@@ -51,8 +54,22 @@ func SetupHelper(t *testing.T) *TestHelper {
 		restoreEnv["MM_SERVER_PATH"] = oldPath
 	}
 
-	fmt.Println("serverPath=", serverPath)
-	fmt.Println("MM_SERVER_PATH=", os.Getenv("MM_SERVER_PATH"))
+	t.Logf("serverPath=%s", serverPath)
+	t.Logf("MM_SERVER_PATH=%s", os.Getenv("MM_SERVER_PATH"))
+
+	// start up docker via Mattermost server makefile
+	onceStartDocker.Do(func() {
+		cmd := exec.Command("make", "start-docker")
+		cmd.Dir = serverPath
+		stdout := &strings.Builder{}
+		stderr := &strings.Builder{}
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
+		err := cmd.Run()
+		t.Log(stdout.String())
+		t.Log(stderr.String())
+		require.NoError(t, err, "make start-docker fail")
+	})
 
 	th := &TestHelper{}
 	th.mainHelper = testlib.NewMainHelperWithOptions(&options)
