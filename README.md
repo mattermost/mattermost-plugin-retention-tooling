@@ -2,6 +2,8 @@
 
 This plugin provides data retention tools to augment the [data retention capabilities](https://docs.mattermost.com/comply/data-retention-policy.html) of Mattermost Enterprise Edition.
 
+**Not recommended for production use without Mattermost guidance. Please reach out to your Customer Success Manager to learn more.**
+
 ## Tools
 
 ### De-activated User Clean-up
