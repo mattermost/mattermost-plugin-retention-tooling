@@ -30,7 +30,7 @@ func (ss *SQLStore) GetStaleChannels(opts StaleChannelOpts, page int, pageSize i
 
 	// find all channels where no posts or reactions have been modified,deleted since the olderThan timestamp.
 	query := ss.builder.Select("ch.id", "ch.name").Distinct().
-		From("channels as ch").
+		From("Channels as ch").
 		LeftJoin("posts as p ON ch.id=p.channelid").
 		LeftJoin("reactions as r ON p.id=r.postid"). // reactions.channelid does not exist in all versions of server
 		Where(sq.Eq{"ch.deleteat": 0}).
