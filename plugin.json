@@ -6,7 +6,7 @@
     "support_url": "https://github.com/mattermost/mattermost-plugin-retention-tooling/issues",
     "release_notes_url": "https://github.com/mattermost/mattermost-plugin-retention-tooling/releases/tag/v0.1.0",
     "icon_path": "assets/archiver.svg",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "min_server_version": "6.3.0",
     "server": {
         "executables": {
