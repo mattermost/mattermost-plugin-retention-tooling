@@ -10,6 +10,7 @@ import (
 
 	pluginapi "github.com/mattermost/mattermost-plugin-api"
 	"github.com/mattermost/mattermost-plugin-api/cluster"
+	"github.com/mattermost/mattermost-plugin-retention-tooling/server/bot"
 	"github.com/mattermost/mattermost-plugin-retention-tooling/server/channels"
 	"github.com/mattermost/mattermost-plugin-retention-tooling/server/config"
 	"github.com/mattermost/mattermost-plugin-retention-tooling/server/store"
@@ -25,15 +26,22 @@ type ChannelArchiverJob struct {
 	id       string
 	papi     plugin.API
 	client   *pluginapi.Client
+	bot      *bot.Bot
 	sqlstore *store.SQLStore
 }
 
 func NewChannelArchiverJob(id string, api plugin.API, client *pluginapi.Client, sqlstore *store.SQLStore) (*ChannelArchiverJob, error) {
+	bot, err := bot.New(client)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create bot for job: %w", err)
+	}
+
 	return &ChannelArchiverJob{
 		settings: &ChannelArchiverJobSettings{},
 		id:       id,
 		papi:     api,
 		client:   client,
+		bot:      bot,
 		sqlstore: sqlstore,
 	}, nil
 }
@@ -173,6 +181,7 @@ func (j *ChannelArchiverJob) run() {
 			ExcludeChannels:           settings.ExcludeChannels,
 		},
 		BatchSize: settings.BatchSize,
+		Bot:       j.bot,
 	}
 
 	results, err := channels.ArchiveStaleChannels(ctx, j.sqlstore, j.client, opts)

@@ -10,7 +10,7 @@ import (
 const (
 	BotUserName    = "channel-archiver"
 	BotDisplayName = "Channel Archiver Bot"
-	BotDescription = "Created by the Rentention Tools Plugin."
+	BotDescription = "Created by the Retention Tools Plugin."
 )
 
 type Bot struct {

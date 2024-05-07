@@ -29,18 +29,21 @@ func (ss *SQLStore) GetStaleChannels(opts StaleChannelOpts, page int, pageSize i
 	excludeChannels = append(excludeChannels, defaultChannels...)
 
 	// find all channels where no posts or reactions have been modified,deleted since the olderThan timestamp.
-	query := ss.builder.Select("ch.id", "ch.name").Distinct().
-		From("channels as ch").
-		LeftJoin("posts as p ON ch.id=p.channelid").
-		LeftJoin("reactions as r ON p.id=r.postid"). // reactions.channelid does not exist in all versions of server
-		Where(sq.Eq{"ch.deleteat": 0}).
-		Where(sq.Lt{"ch.updateat": olderThan}).
-		Where(sq.Or{sq.Eq{"p.updateat": nil}, sq.Lt{"p.updateat": olderThan, "p.deleteat": olderThan}}).
-		Where(sq.Or{sq.Eq{"r.updateat": nil}, sq.Lt{"r.updateat": olderThan, "r.deleteat": olderThan}}).
-		OrderBy("ch.id")
+	query := ss.builder.Select("ch.Id", "ch.Name").Distinct().
+		From("Channels as ch").
+		LeftJoin("Posts as p ON ch.Id=p.ChannelId").
+		LeftJoin("Reactions as r ON p.Id=r.PostId"). // reactions.channelid does not exist in all versions of server
+		Where(sq.Eq{"ch.DeleteAt": 0}).
+		Where(sq.Lt{"ch.UpdateAt": olderThan}).
+		Where(sq.Or{sq.Eq{"p.UpdateAt": nil}, sq.Lt{"p.UpdateAt": olderThan, "p.DeleteAt": olderThan}}).
+		Where(sq.Or{sq.Eq{"r.UpdateAt": nil}, sq.Lt{"r.UpdateAt": olderThan, "r.DeleteAt": olderThan}}).
+		OrderBy("ch.Id")
 
 	if len(excludeChannels) > 0 {
-		query = query.Where(sq.NotEq{"ch.id": excludeChannels, "ch.name": excludeChannels})
+		query = query.Where(sq.And{
+			sq.NotEq{"ch.Id": excludeChannels},
+			sq.NotEq{"ch.Name": excludeChannels},
+		})
 	}
 
 	channelTypes := []string{}
@@ -56,7 +59,7 @@ func (ss *SQLStore) GetStaleChannels(opts StaleChannelOpts, page int, pageSize i
 	if opts.IncludeChannelTypeGroup {
 		channelTypes = append(channelTypes, string(model.ChannelTypeGroup))
 	}
-	query = query.Where(sq.Eq{"ch.type": channelTypes})
+	query = query.Where(sq.Eq{"ch.Type": channelTypes})
 
 	if page > 0 {
 		query = query.Offset(uint64(page * pageSize))
