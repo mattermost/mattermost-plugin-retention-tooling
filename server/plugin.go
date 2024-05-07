@@ -103,7 +103,17 @@ func (p *Plugin) ExecuteCommand(_ *plugin.Context, args *model.CommandArgs) (*mo
 	cmd, _ := CutPrefix(split[0], "/")
 
 	var response *model.CommandResponse
-	var err error
+
+	userID := args.UserId
+	isAdmin, err := p.ensureSystemAdmin(userID)
+	if err != nil {
+		p.API.LogError("error verifying whether user is a system admin", "user_id", userID, "err", err.Error())
+		return &model.CommandResponse{Text: "Error verifying whether user is a system admin."}, nil
+	}
+
+	if !isAdmin {
+		return &model.CommandResponse{Text: "User must be a system admin to use this command."}, nil
+	}
 
 	switch cmd {
 	case command.ArchiverTrigger:

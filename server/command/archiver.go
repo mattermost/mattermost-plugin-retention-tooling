@@ -68,6 +68,7 @@ func RegisterChannelArchiver(client *pluginapi.Client, store *store.SQLStore) (*
 
 	cmd := model.NewAutocompleteData(ArchiverTrigger, hint, "Manage stale channels.")
 	cmd.SubCommands = commands
+	cmd.RoleID = model.SystemAdminRoleId
 
 	iconData, err := command.GetIconData(&client.System, "assets/archiver.svg")
 	if err != nil {
