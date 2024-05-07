@@ -78,7 +78,7 @@ func TestServeHTTP(t *testing.T) {
 				return r
 			},
 			expectedStatus: 401,
-			expectedError:  "error verifying whether user requesting_user_id is a system admin: user is not a system admin",
+			expectedError:  "user requesting_user_id is not a system admin",
 		},
 		"missing user info in request": {
 			makeRequest: func(api *plugintest.API) *http.Request {

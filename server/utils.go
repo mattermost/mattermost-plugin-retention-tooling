@@ -8,17 +8,17 @@ import (
 	"github.com/mattermost/mattermost-server/v6/model"
 )
 
-func (p *Plugin) ensureSystemAdmin(userID string) error {
+func (p *Plugin) ensureSystemAdmin(userID string) (bool, error) {
 	user, appErr := p.API.GetUser(userID)
 	if appErr != nil {
-		return errors.Wrapf(appErr, "failed to get user with id %s", userID)
+		return false, errors.Wrapf(appErr, "failed to get user with id %s", userID)
 	}
 
 	if !strings.Contains(user.Roles, model.SystemAdminRoleId) {
-		return errors.New("user is not a system admin")
+		return false, nil
 	}
 
-	return nil
+	return true, nil
 }
 
 // CutPrefix returns s without the provided leading prefix string

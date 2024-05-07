@@ -32,9 +32,14 @@ func (p *Plugin) handleRemoveUserFromAllTeamsAndChannels(w http.ResponseWriter, 
 		return
 	}
 
-	err := p.ensureSystemAdmin(requesterID)
+	isAdmin, err := p.ensureSystemAdmin(requesterID)
 	if err != nil {
 		writeError(fmt.Sprintf("error verifying whether user %s is a system admin: %s", requesterID, err.Error()), http.StatusUnauthorized)
+		return
+	}
+
+	if !isAdmin {
+		writeError(fmt.Sprintf("user %s is not a system admin", requesterID), http.StatusUnauthorized)
 		return
 	}
 
