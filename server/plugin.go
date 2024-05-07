@@ -105,6 +105,13 @@ func (p *Plugin) ExecuteCommand(_ *plugin.Context, args *model.CommandArgs) (*mo
 	var response *model.CommandResponse
 	var err error
 
+	userId := args.UserId
+	err = p.ensureSystemAdmin(userId)
+	if err != nil {
+		p.API.LogError("error verifying whether user is a system admin", "user_id", userId, "err", err.Error())
+		return &model.CommandResponse{Text: "User must be a system admin to use this command."}, nil
+	}
+
 	switch cmd {
 	case command.ArchiverTrigger:
 		response, err = p.channelArchiverCmd.Execute(args)
