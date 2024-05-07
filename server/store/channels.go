@@ -40,7 +40,10 @@ func (ss *SQLStore) GetStaleChannels(opts StaleChannelOpts, page int, pageSize i
 		OrderBy("ch.Id")
 
 	if len(excludeChannels) > 0 {
-		query = query.Where(sq.NotEq{"ch.Id": excludeChannels, "ch.Name": excludeChannels})
+		query = query.Where(sq.And{
+			sq.NotEq{"ch.Id": excludeChannels},
+			sq.NotEq{"ch.Name": excludeChannels},
+		})
 	}
 
 	channelTypes := []string{}

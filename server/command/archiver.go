@@ -166,6 +166,7 @@ func (ca *ChannelArchiverCmd) handleArchive(args *model.CommandArgs, params map[
 			msg := fmt.Sprintf("Channel-archiver progress -- %d channels archived.", len(results.ChannelsArchived))
 			_ = ca.bot.SendEphemeralPost(args.ChannelId, args.UserId, msg)
 		},
+		Bot: ca.bot,
 	}
 
 	results, err := channels.ArchiveStaleChannels(context.TODO(), ca.sqlStore, ca.client, opts)

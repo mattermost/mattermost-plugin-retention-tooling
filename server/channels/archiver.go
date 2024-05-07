@@ -57,6 +57,17 @@ func ArchiveStaleChannels(ctx context.Context, sqlstore *store.SQLStore, client 
 	if opts.ListOnly {
 		return results, listStaleChannels(ctx, sqlstore, opts, results)
 	}
+
+	client.Log.Debug(
+		"Archiving stale channels.",
+		"AgeInDays", opts.StaleChannelOpts.AgeInDays,
+		"exclude", opts.StaleChannelOpts.ExcludeChannels,
+		"open", opts.StaleChannelOpts.IncludeChannelTypeOpen,
+		"private", opts.StaleChannelOpts.IncludeChannelTypePrivate,
+		"dm", opts.StaleChannelOpts.IncludeChannelTypeDirect,
+		"gm", opts.StaleChannelOpts.IncludeChannelTypeGroup,
+	)
+
 	return results, archiveStaleChannels(ctx, sqlstore, client, opts, results)
 }
 
