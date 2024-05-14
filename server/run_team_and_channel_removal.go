@@ -7,12 +7,21 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin"
 )
 
 type Payload struct {
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
+}
+
+func (p *Plugin) UserHasBeenDeactivated(c *plugin.Context, user *model.User) {
+	conf := p.getConfiguration()
+	if conf.EnableUserCleanup {
+		p.API.LogDebug(fmt.Sprintf("Removing deactivated user %s from all channels and teams", user.Id))
+		p.removeUserFromAllTeamsAndChannels(user, "")
+	}
 }
 
 func (p *Plugin) handleRemoveUserFromAllTeamsAndChannels(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +47,7 @@ func (p *Plugin) handleRemoveUserFromAllTeamsAndChannels(w http.ResponseWriter, 
 		return
 	}
 
-	err = p.removeUserFromAllTeamsAndChannels(r, requesterID)
+	err = p.removeUserFromAllTeamsAndChannelsFromRequest(r, requesterID)
 	if err != nil {
 		err = errors.Wrap(err, "error processing request")
 		p.API.LogError(err.Error())
@@ -50,7 +59,7 @@ func (p *Plugin) handleRemoveUserFromAllTeamsAndChannels(w http.ResponseWriter, 
 	_ = json.NewEncoder(w).Encode(SuccessResponse{true})
 }
 
-func (p *Plugin) removeUserFromAllTeamsAndChannels(r *http.Request, requesterID string) error {
+func (p *Plugin) removeUserFromAllTeamsAndChannelsFromRequest(r *http.Request, requesterID string) error {
 	var payload Payload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
@@ -76,6 +85,12 @@ func (p *Plugin) removeUserFromAllTeamsAndChannels(r *http.Request, requesterID 
 	default:
 		return errors.New("please provide either user_id or username in the request payload")
 	}
+
+	return p.removeUserFromAllTeamsAndChannels(user, requesterID)
+}
+
+func (p *Plugin) removeUserFromAllTeamsAndChannels(user *model.User, requesterID string) error {
+	var err error
 
 	// Start team/channel removal process
 	teamMembers, appErr := p.API.GetTeamMembersForUser(user.Id, 0, 1000)

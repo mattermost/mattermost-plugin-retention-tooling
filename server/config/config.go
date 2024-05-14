@@ -34,6 +34,7 @@ var (
 // copy appropriate for your types.
 type Configuration struct {
 	EnableChannelArchiver bool
+	EnableUserCleanup     bool
 	AgeInDays             int
 	Frequency             string
 	DayOfWeek             string

@@ -22,6 +22,14 @@
         "footer": "",
         "settings": [
             {
+                "key": "EnableUserCleanup",
+                "display_name": "Enable User Deactivation Cleanup:",
+                "type": "bool",
+                "help_text": "When enabled, the plugin removes a user from all teams and channels when they are deactivated",
+                "placeholder": "",
+                "default": false
+            },
+            {
                 "key": "EnableChannelArchiver",
                 "display_name": "Enable Channel Archiver:",
                 "type": "bool",
@@ -43,15 +51,15 @@
                 "default": "monthly",
                 "options": [
                     {
-                        "display_name": "Monthly", 
+                        "display_name": "Monthly",
                         "value": "monthly"
                     },
                     {
-                        "display_name": "Daily", 
+                        "display_name": "Daily",
                         "value": "daily"
                     },
                     {
-                        "display_name": "Weekly", 
+                        "display_name": "Weekly",
                         "value": "weekly"
                     }
                 ]
@@ -64,42 +72,42 @@
                 "default": "1",
                 "options": [
                     {
-                        "display_name": "Sunday", 
+                        "display_name": "Sunday",
                         "value": "0"
                     },
                     {
-                        "display_name": "Monday", 
+                        "display_name": "Monday",
                         "value": "1"
                     },
                     {
-                        "display_name": "Tuesday", 
+                        "display_name": "Tuesday",
                         "value": "2"
                     },
                     {
-                        "display_name": "Wednesday", 
+                        "display_name": "Wednesday",
                         "value": "3"
                     },
                     {
-                        "display_name": "Thursday", 
+                        "display_name": "Thursday",
                         "value": "4"
                     },
                     {
-                        "display_name": "Friday", 
+                        "display_name": "Friday",
                         "value": "5"
                     },
                     {
-                        "display_name": "Saturday", 
+                        "display_name": "Saturday",
                         "value": "6"
-                    }                                        
+                    }
                 ]
-            },            
+            },
             {
                 "key": "TimeOfDay",
                 "display_name": "Time of day:",
                 "type": "text",
                 "help_text": "Time of day to run the Channel Archiver in the form 'HH:MM ±HHMM' (e.g. '3:00am -0700').  Use +0000 for UTC.",
                 "default": "1:00am -0700"
-            },            
+            },
             {
                 "key": "ExcludeChannels",
                 "display_name": "Exclude channels:",
@@ -114,7 +122,7 @@
                 "type": "number",
                 "help_text": "Channels will be archived in batches of this size to avoid stressing the server(s) or database(s).",
                 "default": 100
-            }            
+            }
         ]
     }
 }
