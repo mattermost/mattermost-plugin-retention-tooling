@@ -7,9 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-api/experimental/command"
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/pluginapi/experimental/command"
 
 	"github.com/mattermost/mattermost-plugin-retention-tooling/server/bot"
 	"github.com/mattermost/mattermost-plugin-retention-tooling/server/channels"

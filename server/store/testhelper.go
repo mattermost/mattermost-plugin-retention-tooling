@@ -11,9 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/store/storetest"
-	"github.com/mattermost/mattermost-server/v6/testlib"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/v8/channels/store/storetest"
+	"github.com/mattermost/mattermost/server/v8/channels/testlib"
 )
 
 var onceStartDocker sync.Once
@@ -33,7 +33,7 @@ type TestHelper struct {
 }
 
 func getServerPath(t *testing.T) string {
-	out, err := exec.Command("go", "list", "-m", "-f", "'{{.Dir}}'", "github.com/mattermost/mattermost-server/v6").Output()
+	out, err := exec.Command("go", "list", "-m", "-f", "'{{.Dir}}'", "github.com/mattermost/mattermost/server/v8").Output()
 	require.NoError(t, err, "cannot get mod cache path for server package")
 	return strings.Trim(strings.TrimSpace(string(out)), "'")
 }
@@ -47,6 +47,8 @@ func SetupHelper(t *testing.T) *TestHelper {
 	// MM_SERVER_PATH env var to point to the server package in mod cache.
 	restoreEnv := make(map[string]string)
 	serverPath := getServerPath(t)
+	fmt.Println(serverPath)
+	fmt.Println("Michael")
 	if serverPath != "" {
 		oldPath := os.Getenv("MM_SERVER_PATH")
 		err := os.Setenv("MM_SERVER_PATH", serverPath)
@@ -148,7 +150,7 @@ func (th *TestHelper) CreateChannels(num int, namePrefix string, userID string, 
 			CreatorId:   userID,
 			TeamId:      teamID,
 		}
-		channel, err := th.mainHelper.Store.Channel().Save(channel, 1024)
+		channel, err := th.mainHelper.Store.Channel().Save(nil, channel, 1024)
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +167,7 @@ func (th *TestHelper) CreateUsers(num int, namePrefix string) ([]*model.User, er
 			Password: namePrefix,
 			Email:    fmt.Sprintf("%s@example.com", model.NewId()),
 		}
-		user, err := th.mainHelper.Store.User().Save(user)
+		user, err := th.mainHelper.Store.User().Save(nil, user)
 		if err != nil {
 			return nil, err
 		}
@@ -183,7 +185,7 @@ func (th *TestHelper) CreatePosts(num int, userID string, channelID string) ([]*
 			Type:      model.PostTypeDefault,
 			Message:   fmt.Sprintf("test post %d of %d", i, num),
 		}
-		post, err := th.mainHelper.Store.Post().Save(post)
+		post, err := th.mainHelper.Store.Post().Save(nil, post)
 		if err != nil {
 			return nil, err
 		}
