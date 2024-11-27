@@ -256,11 +256,6 @@ func setTimestamps(t *testing.T, th *TestHelper, table string, channelID string,
 		panic("invalid table name")
 	}
 
-	sql, args, err := query.ToSql()
-	require.NoError(t, err)
-
-	t.Logf("setTimestamps: %s, %d", sql, args)
-
 	result, err := query.Exec()
 	require.NoError(t, err)
 
