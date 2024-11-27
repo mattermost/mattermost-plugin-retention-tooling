@@ -170,8 +170,6 @@ github.com/mattermost/logr/v2 v2.0.21 h1:CMHsP+nrbRlEC4g7BwOk1GAnMtHkniFhlSQPXy5
 github.com/mattermost/logr/v2 v2.0.21/go.mod h1:kZkB/zqKL9e+RY5gB3vGpsyenC+TpuiOenjMkvJJbzc=
 github.com/mattermost/mattermost/server/public v0.1.5 h1:hi7cKEAL/sMDu0WlqcQ8qJWVRgf1EcrS1vHBRjCOH10=
 github.com/mattermost/mattermost/server/public v0.1.5/go.mod h1:PDPb/iqzJJ5ZvK/m70oDF55AXN/cOvVFj96Yu4e6j+Q=
-github.com/mattermost/testcontainers-mattermost-go v0.0.0-20240619123633-76696dfc3bf5 h1:5kSiwnLJw222trtdapZJkw9AQyNKe4lHP7fO+WaYnjM=
-github.com/mattermost/testcontainers-mattermost-go v0.0.0-20240619123633-76696dfc3bf5/go.mod h1:I8PFMdR0POKmKCpqc3GTQ/VghEMJtMu/ODwqJYoAxw4=
 github.com/mattermost/testcontainers-mattermost-go v0.0.0-20241127183531-21e4192b3a2a h1:zAWI3T75ykMdrBgqeOlx5UWIUmuPUAf0+IXvuoaY1pY=
 github.com/mattermost/testcontainers-mattermost-go v0.0.0-20241127183531-21e4192b3a2a/go.mod h1:I8PFMdR0POKmKCpqc3GTQ/VghEMJtMu/ODwqJYoAxw4=
 github.com/mattn/go-colorable v0.1.9/go.mod h1:u6P/XSegPjTcexA+o6vUJrdnUu04hMope9wVRipJSqc=
