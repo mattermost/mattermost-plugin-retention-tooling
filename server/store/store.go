@@ -3,10 +3,12 @@ package store
 import (
 	"database/sql"
 
+	_ "github.com/lib/pq"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 type SQLStoreSource interface {

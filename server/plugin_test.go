@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/plugin/plugintest"
+	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/mattermost/mattermost/server/public/plugin/plugintest"
 )
 
 const deleteChannelMembersRoute = "/remove_user_from_all_teams_and_channels"
@@ -64,7 +64,7 @@ func TestServeHTTP(t *testing.T) {
 				return r
 			},
 			expectedStatus: 401,
-			expectedError:  "error verifying whether user requesting_user_id is a system admin: failed to get user with id requesting_user_id: : , user not found",
+			expectedError:  "error verifying whether user requesting_user_id is a system admin: failed to get user with id requesting_user_id: , user not found",
 		},
 		"user is not sysadmin": {
 			makeRequest: func(api *plugintest.API) *http.Request {
@@ -311,10 +311,10 @@ func TestHandleRemoveUserFromAllTeamsAndChannels(t *testing.T) {
 
 				api.On("DeleteTeamMember", "teamid1", "deactivated_user_id", "requesting_user_id").Return(&model.AppError{DetailedError: "some database error"})
 
-				api.On("LogError", "error processing request: failed to process team member. user=deactivated_username team=teamid1: failed to remove user from team: : , some database error")
+				api.On("LogError", "error processing request: failed to process team member. user=deactivated_username team=teamid1: failed to remove user from team: , some database error")
 			},
 			expectedStatus: 500,
-			expectedError:  "error processing request: failed to process team member. user=deactivated_username team=teamid1: failed to remove user from team: : , some database error",
+			expectedError:  "error processing request: failed to process team member. user=deactivated_username team=teamid1: failed to remove user from team: , some database error",
 		},
 		"error deleting channel member": {
 			runAssertions: func(api *plugintest.API) {
@@ -346,10 +346,10 @@ func TestHandleRemoveUserFromAllTeamsAndChannels(t *testing.T) {
 
 				api.On("GetChannel", "channelid3").Return(&model.Channel{Name: "channelname3"}, nil)
 
-				api.On("LogError", "error processing request: failed to process team member. user=deactivated_username team=teamid1: failed to process channel member. channel=channelid3: failed to remove user from channel: : , some database error")
+				api.On("LogError", "error processing request: failed to process team member. user=deactivated_username team=teamid1: failed to process channel member. channel=channelid3: failed to remove user from channel: , some database error")
 			},
 			expectedStatus: 500,
-			expectedError:  "error processing request: failed to process team member. user=deactivated_username team=teamid1: failed to process channel member. channel=channelid3: failed to remove user from channel: : , some database error",
+			expectedError:  "error processing request: failed to process team member. user=deactivated_username team=teamid1: failed to process channel member. channel=channelid3: failed to remove user from channel: , some database error",
 		},
 		"handle town square case": {
 			runAssertions: func(api *plugintest.API) {

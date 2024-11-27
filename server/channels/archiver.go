@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
+	pluginapi "github.com/mattermost/mattermost/server/public/pluginapi"
 
 	"github.com/mattermost/mattermost-plugin-retention-tooling/server/bot"
 	"github.com/mattermost/mattermost-plugin-retention-tooling/server/store"

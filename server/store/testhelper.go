@@ -1,26 +1,22 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
-	"sync"
 	"testing"
 
+	mmcontainer "github.com/mattermost/testcontainers-mattermost-go"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mattermost/mattermost-server/v6/model"
-	"github.com/mattermost/mattermost-server/v6/store/storetest"
-	"github.com/mattermost/mattermost-server/v6/testlib"
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
-var onceStartDocker sync.Once
-
 type TestHelper struct {
-	mainHelper *testlib.MainHelper
-	restoreEnv map[string]string
+	mattermost  *mmcontainer.MattermostContainer
+	AdminClient *model.Client4
+	UserClient  *model.Client4
 
 	Store *SQLStore
 
@@ -29,60 +25,24 @@ type TestHelper struct {
 	Channel1 *model.Channel
 	Channel2 *model.Channel
 	User1    *model.User
-	User2    *model.User
-}
-
-func getServerPath(t *testing.T) string {
-	out, err := exec.Command("go", "list", "-m", "-f", "'{{.Dir}}'", "github.com/mattermost/mattermost-server/v6").Output()
-	require.NoError(t, err, "cannot get mod cache path for server package")
-	return strings.Trim(strings.TrimSpace(string(out)), "'")
 }
 
 func SetupHelper(t *testing.T) *TestHelper {
-	var options = testlib.HelperOptions{
-		EnableStore: true,
-	}
-
-	// testlib needs to access files in the server package, so here we set the
-	// MM_SERVER_PATH env var to point to the server package in mod cache.
-	restoreEnv := make(map[string]string)
-	serverPath := getServerPath(t)
-	if serverPath != "" {
-		oldPath := os.Getenv("MM_SERVER_PATH")
-		err := os.Setenv("MM_SERVER_PATH", serverPath)
-		require.NoError(t, err, "cannot set env MM_SERVER_PATH var")
-		restoreEnv["MM_SERVER_PATH"] = oldPath
-	}
-
-	t.Logf("serverPath=%s", serverPath)
-	t.Logf("MM_SERVER_PATH=%s", os.Getenv("MM_SERVER_PATH"))
-
-	// start up docker via Mattermost server makefile
-	onceStartDocker.Do(func() {
-		cmd := exec.Command("make", "start-docker")
-		cmd.Dir = serverPath
-		stdout := &strings.Builder{}
-		stderr := &strings.Builder{}
-		cmd.Stdout = stdout
-		cmd.Stderr = stderr
-		err := cmd.Run()
-		t.Log(stdout.String())
-		t.Log(stderr.String())
-		require.NoError(t, err, "make start-docker fail")
-	})
+	t.Helper()
+	ctx := context.TODO()
+	mattermost, err := mmcontainer.RunContainer(ctx)
+	require.NoError(t, err)
 
 	th := &TestHelper{}
-	th.mainHelper = testlib.NewMainHelperWithOptions(&options)
-	th.restoreEnv = restoreEnv
+	th.mattermost = mattermost
 
-	dbStore := th.mainHelper.GetStore()
-	dbStore.DropAllTables()
-	dbStore.MarkSystemRanUnitTests()
-	th.mainHelper.PreloadMigrations()
-
-	store, err := New(storeWrapper{th.mainHelper}, &testLogger{t})
+	store, err := New(storeWrapper{mattermost}, &testLogger{t})
 	require.NoError(t, err, "could not create store")
 	th.Store = store
+
+	adminClient, err := th.mattermost.GetAdminClient(ctx)
+	require.NoError(t, err, "could not create admin client")
+	th.AdminClient = adminClient
 
 	return th
 }
@@ -98,26 +58,21 @@ func (th *TestHelper) SetupBasic(t *testing.T) *TestHelper {
 	users, err := th.CreateUsers(2, "test.user")
 	require.NoError(t, err)
 	th.User1 = users[0]
-	th.User2 = users[1]
 
-	// create some channels
-	channels, err := th.CreateChannels(2, "test-channel", th.User1.Id, th.Team1.Id)
-	require.NoError(t, err, "could not create channels")
-	th.Channel1 = channels[0]
-	th.Channel2 = channels[1]
+	ctx := context.TODO()
+	client, err := th.mattermost.GetClient(ctx, th.User1.Username, "test.user")
+	require.NoError(t, err, "could not create client")
+	th.UserClient = client
 
 	return th
 }
 
 func (th *TestHelper) TearDown() {
-	if th.mainHelper.SQLStore != nil {
-		th.mainHelper.SQLStore.Close()
-	}
-	if th.mainHelper.Settings != nil {
-		storetest.CleanupSqlSettings(th.mainHelper.Settings)
-	}
-	for k, v := range th.restoreEnv {
-		_ = os.Setenv(k, v)
+	if th.mattermost != nil {
+		err := th.mattermost.Terminate(context.TODO())
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -129,7 +84,8 @@ func (th *TestHelper) CreateTeams(num int, namePrefix string) ([]*model.Team, er
 			DisplayName: fmt.Sprintf("%s-%d", namePrefix, i),
 			Type:        model.TeamOpen,
 		}
-		team, err := th.mainHelper.Store.Team().Save(team)
+
+		team, _, err := th.AdminClient.CreateTeam(context.TODO(), team)
 		if err != nil {
 			return nil, err
 		}
@@ -148,7 +104,7 @@ func (th *TestHelper) CreateChannels(num int, namePrefix string, userID string, 
 			CreatorId:   userID,
 			TeamId:      teamID,
 		}
-		channel, err := th.mainHelper.Store.Channel().Save(channel, 1024)
+		channel, _, err := th.UserClient.CreateChannel(context.TODO(), channel)
 		if err != nil {
 			return nil, err
 		}
@@ -165,10 +121,21 @@ func (th *TestHelper) CreateUsers(num int, namePrefix string) ([]*model.User, er
 			Password: namePrefix,
 			Email:    fmt.Sprintf("%s@example.com", model.NewId()),
 		}
-		user, err := th.mainHelper.Store.User().Save(user)
+		user, _, err := th.AdminClient.CreateUser(context.TODO(), user)
 		if err != nil {
 			return nil, err
 		}
+
+		_, _, err = th.AdminClient.AddTeamMember(context.TODO(), th.Team1.Id, user.Id)
+		if err != nil {
+			return nil, err
+		}
+
+		_, _, err = th.AdminClient.AddTeamMember(context.TODO(), th.Team2.Id, user.Id)
+		if err != nil {
+			return nil, err
+		}
+
 		users = append(users, user)
 	}
 	return users, nil
@@ -183,7 +150,7 @@ func (th *TestHelper) CreatePosts(num int, userID string, channelID string) ([]*
 			Type:      model.PostTypeDefault,
 			Message:   fmt.Sprintf("test post %d of %d", i, num),
 		}
-		post, err := th.mainHelper.Store.Post().Save(post)
+		post, _, err := th.UserClient.CreatePost(context.TODO(), post)
 		if err != nil {
 			return nil, err
 		}
@@ -201,7 +168,7 @@ func (th *TestHelper) CreateReactions(posts []*model.Post, userID string) ([]*mo
 			EmojiName: "shrug",
 			ChannelId: post.ChannelId,
 		}
-		reaction, err := th.mainHelper.Store.Reaction().Save(reaction)
+		reaction, _, err := th.UserClient.SaveReaction(context.TODO(), reaction)
 		if err != nil {
 			return nil, err
 		}
@@ -212,14 +179,18 @@ func (th *TestHelper) CreateReactions(posts []*model.Post, userID string) ([]*mo
 
 // storeWrapper is a wrapper for MainHelper that implements SQLStoreSource interface.
 type storeWrapper struct {
-	mainHelper *testlib.MainHelper
+	mattermost *mmcontainer.MattermostContainer
 }
 
 func (sw storeWrapper) GetMasterDB() (*sql.DB, error) {
-	return sw.mainHelper.SQLStore.GetInternalMasterDB(), nil
+	sqlDB, err := sw.mattermost.PostgresConnection(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+	return sqlDB, nil
 }
 func (sw storeWrapper) DriverName() string {
-	return *sw.mainHelper.Settings.DriverName
+	return model.DatabaseDriverPostgres
 }
 
 type testLogger struct {
