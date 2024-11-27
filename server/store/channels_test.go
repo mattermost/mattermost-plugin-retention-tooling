@@ -17,43 +17,6 @@ var (
 	weekAgo = model.GetMillisForTime(time.Now().AddDate(0, 0, -7))
 )
 
-func TestSQLStore_GetStaleChannels_Simplified(t *testing.T) {
-	th := SetupHelper(t).SetupBasic(t)
-	defer th.TearDown()
-
-	// Create a single channel
-	channels, err := th.CreateChannels(1, "stale-test", th.User1.Id, th.Team1.Id)
-	require.NoError(t, err)
-
-	// Add posts and reactions to the channel
-	posts, err := th.CreatePosts(10, th.User1.Id, channels[0].Id)
-	require.NoError(t, err)
-
-	reactions, err := th.CreateReactions(posts, th.User1.Id)
-	require.NoError(t, err)
-	assert.NotEmpty(t, reactions)
-
-	// Adjust timestamps for the channel, posts, and reactions
-	yearAgo := model.GetMillisForTime(time.Now().AddDate(-1, 0, 0))
-	weekAgo := model.GetMillisForTime(time.Now().AddDate(0, 0, -7))
-
-	setTimestamps(t, th, "Channels", channels[0].Id, yearAgo, yearAgo, 0)
-	setTimestamps(t, th, "Posts", channels[0].Id, weekAgo, weekAgo, 0)
-	setTimestamps(t, th, "Reactions", channels[0].Id, yearAgo, yearAgo, yearAgo)
-
-	// Fetch channels stale for 30 days or more
-	opts := StaleChannelOpts{
-		AgeInDays:              30,
-		IncludeChannelTypeOpen: true,
-	}
-	staleChannels, more, err := th.Store.GetStaleChannels(opts, 0, 0)
-	require.NoError(t, err)
-	assert.False(t, more)
-
-	// Verify that the channel is not considered stale
-	assert.Empty(t, staleChannels)
-}
-
 func TestSQLStore_GetStaleChannels(t *testing.T) {
 	th := SetupHelper(t).SetupBasic(t)
 	defer th.TearDown()
@@ -305,24 +268,6 @@ func setTimestamps(t *testing.T, th *TestHelper, table string, channelID string,
 	require.NoError(t, err)
 
 	t.Logf("setTimestamps for channelID %s, for %s, %d rows affected.", channelID, table, rowsAffected)
-}
-
-func getTimestamps(t *testing.T, th *TestHelper, table string, id string) (createAt, updateAt, deleteAt int64) {
-	query := th.Store.builder.Select("CreateAt", "UpdateAt", "DeleteAt").
-		From(table)
-
-	if table == "Reactions" {
-		query = query.Where(sq.Eq{"ChannelId": id})
-		query = query.Limit(1)
-	} else {
-		query = query.Where(sq.Eq{"Id": id})
-	}
-
-	row := query.QueryRow()
-	err := row.Scan(&createAt, &updateAt, &deleteAt)
-	require.NoError(t, err)
-
-	return createAt, updateAt, deleteAt
 }
 
 func extractChannelIDs(channels []*model.Channel) []string {

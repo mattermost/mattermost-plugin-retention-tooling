@@ -5,7 +5,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 
-	"github.com/mattermost/mattermost-server/v6/model"
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 var (
@@ -32,11 +32,22 @@ func (ss *SQLStore) GetStaleChannels(opts StaleChannelOpts, page int, pageSize i
 	query := ss.builder.Select("ch.Id", "ch.Name").Distinct().
 		From("Channels as ch").
 		LeftJoin("Posts as p ON ch.Id=p.ChannelId").
-		LeftJoin("Reactions as r ON p.Id=r.PostId"). // reactions.channelid does not exist in all versions of server
-		Where(sq.Eq{"ch.DeleteAt": 0}).
-		Where(sq.Lt{"ch.UpdateAt": olderThan}).
-		Where(sq.Or{sq.Eq{"p.UpdateAt": nil}, sq.Lt{"p.UpdateAt": olderThan, "p.DeleteAt": olderThan}}).
-		Where(sq.Or{sq.Eq{"r.UpdateAt": nil}, sq.Lt{"r.UpdateAt": olderThan, "r.DeleteAt": olderThan}}).
+		LeftJoin("Reactions as r ON p.Id=r.PostId").
+		Where(sq.And{
+			sq.Eq{"ch.DeleteAt": 0},
+			sq.Lt{"ch.UpdateAt": olderThan},
+		}).
+		GroupBy("ch.Id", "ch.Name").
+		Having(sq.And{
+			sq.Or{
+				sq.Eq{"MAX(p.UpdateAt)": nil},
+				sq.Lt{"MAX(p.UpdateAt)": olderThan},
+			},
+			sq.Or{
+				sq.Eq{"MAX(r.UpdateAt)": nil},
+				sq.Lt{"MAX(r.UpdateAt)": olderThan},
+			},
+		}).
 		OrderBy("ch.Id")
 
 	if len(excludeChannels) > 0 {
