@@ -3,6 +3,7 @@ package store
 import (
 	"database/sql"
 
+	// Load the Postgres driver
 	_ "github.com/lib/pq"
 
 	sq "github.com/Masterminds/squirrel"
