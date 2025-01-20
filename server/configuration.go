@@ -64,6 +64,10 @@ func (p *Plugin) OnConfigurationChange() error {
 		}
 	}
 
+	if p.channelArchiverCmd != nil {
+		p.channelArchiverCmd.OnConfigurationChange(configuration)
+	}
+
 	p.setConfiguration(configuration)
 
 	return nil

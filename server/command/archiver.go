@@ -37,6 +37,7 @@ type ChannelArchiverCmd struct {
 	sqlStore *store.SQLStore
 	commands []*model.AutocompleteData
 	bot      *bot.Bot
+	config   *config.Configuration
 }
 
 func getDefaultBatchSize(list bool) int {
@@ -47,7 +48,7 @@ func getDefaultBatchSize(list bool) int {
 }
 
 // RegisterChannelArchiver is called by the plugin to register all necessary commands
-func RegisterChannelArchiver(client *pluginapi.Client, store *store.SQLStore) (*ChannelArchiverCmd, error) {
+func RegisterChannelArchiver(client *pluginapi.Client, store *store.SQLStore, configuration *config.Configuration) (*ChannelArchiverCmd, error) {
 	cmdArchive := model.NewAutocompleteData("archive", "", "Archive stale channels")
 	cmdList := model.NewAutocompleteData("list", "", "List stale channels that would be archived")
 	cmdHelp := model.NewAutocompleteData("help", "", "Display help text")
@@ -99,7 +100,12 @@ func RegisterChannelArchiver(client *pluginapi.Client, store *store.SQLStore) (*
 		sqlStore: store,
 		commands: commands,
 		bot:      bot,
+		config:   configuration,
 	}, nil
+}
+
+func (ca *ChannelArchiverCmd) OnConfigurationChange(newConfig *config.Configuration) {
+	ca.config = newConfig
 }
 
 func (ca *ChannelArchiverCmd) Execute(args *model.CommandArgs) (*model.CommandResponse, error) {
@@ -156,6 +162,7 @@ func (ca *ChannelArchiverCmd) handleArchive(args *model.CommandArgs, params map[
 			ExcludeChannels:           exclude,
 			IncludeChannelTypeOpen:    true,
 			IncludeChannelTypePrivate: true,
+			AdminChannel:              ca.config.AdminChannel,
 		},
 		BatchSize: batchSize,
 		ListOnly:  list,
@@ -176,8 +183,13 @@ func (ca *ChannelArchiverCmd) handleArchive(args *model.CommandArgs, params map[
 	}
 
 	if list {
-		ca.reportChannelList(args, results.ChannelsArchived)
-		msg := fmt.Sprintf("count: %d\n%s", len(results.ChannelsArchived), results.ExitReason)
+		msg := ""
+		if ca.config.AdminChannel != "" {
+			msg = fmt.Sprintf("Channel list uploaded to %s.", ca.config.AdminChannel)
+		} else {
+			ca.reportChannelList(args, results.ChannelsArchived)
+			msg = fmt.Sprintf("count: %d\n%s", len(results.ChannelsArchived), results.ExitReason)
+		}
 		return msg, nil
 	}
 

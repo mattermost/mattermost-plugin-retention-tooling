@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -46,6 +47,17 @@ func (b *Bot) SendEphemeralPost(channelID string, userID string, msg string) err
 	return nil
 }
 
+func (b *Bot) SendPostWithAttachment(channelID string, msg string, file *model.FileInfo) error {
+	post := &model.Post{
+		UserId:    b.botID,
+		ChannelId: channelID,
+		Message:   msg,
+		FileIds:   []string{file.Id},
+	}
+	b.client.Log.Debug("Sending post with attachment", "post", post)
+	return b.client.Post.CreatePost(post)
+}
+
 func (b *Bot) SendDirectPost(userID string, msg string) error {
 	channel, err := b.client.Channel.GetDirect(userID, b.botID)
 	if err != nil {
@@ -67,4 +79,8 @@ func (b *Bot) SendPost(channelID string, msg string) error {
 		Message:   msg,
 	}
 	return b.client.Post.CreatePost(post)
+}
+
+func (b *Bot) UploadFile(content *bytes.Buffer, fileName, adminChannel string) (*model.FileInfo, error) {
+	return b.client.File.Upload(content, fileName, adminChannel)
 }
