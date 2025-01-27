@@ -21,6 +21,40 @@ var (
 	monthAgo  = model.GetMillisForTime(staleTime)
 )
 
+func TestArchiveStaleChannelsListMode(t *testing.T) {
+	th := store.SetupHelper(t).SetupBasic(t)
+	defer th.TearDown()
+
+	mockAPI := &plugintest.API{}
+	mockAPI.On("LogDebug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	client := pluginapi.NewClient(mockAPI, nil)
+
+	// Create test channels
+	channels, err := th.CreateChannels(3, "test-channel", th.User1.Id, th.Team1.Id)
+	require.NoError(t, err)
+
+	// Set channels as stale by updating their UpdateAt timestamp
+	for _, ch := range channels {
+		store.SetTimestamps(t, th, "Posts", ch.Id, monthAgo, monthAgo, 0)
+		store.SetTimestamps(t, th, "Channels", ch.Id, monthAgo, monthAgo, 0)
+	}
+
+	opts := ArchiverOpts{
+		StaleChannelOpts: store.StaleChannelOpts{
+			AgeInDays:              30,
+			IncludeChannelTypeOpen: true,
+		},
+		ListOnly:  true,
+		BatchSize: 10,
+	}
+
+	results, err := ArchiveStaleChannels(context.Background(), th.Store, client, opts)
+	require.NoError(t, err)
+	assert.Equal(t, ReasonDone, results.ExitReason)
+	assert.Len(t, results.ChannelsArchived, 3)
+}
+
 func TestArchiveStaleChannelsArchiveMode(t *testing.T) {
 	th := store.SetupHelper(t).SetupBasic(t)
 	defer th.TearDown()
@@ -60,40 +94,6 @@ func TestArchiveStaleChannelsArchiveMode(t *testing.T) {
 	assert.Len(t, results.ChannelsArchived, 3)
 
 	mockAPI.AssertNumberOfCalls(t, "DeleteChannel", 3)
-}
-
-func TestArchiveStaleChannelsListMode(t *testing.T) {
-	th := store.SetupHelper(t).SetupBasic(t)
-	defer th.TearDown()
-
-	mockAPI := &plugintest.API{}
-	mockAPI.On("LogDebug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
-	client := pluginapi.NewClient(mockAPI, nil)
-
-	// Create test channels
-	channels, err := th.CreateChannels(3, "test-channel", th.User1.Id, th.Team1.Id)
-	require.NoError(t, err)
-
-	// Set channels as stale by updating their UpdateAt timestamp
-	for _, ch := range channels {
-		store.SetTimestamps(t, th, "Posts", ch.Id, monthAgo, monthAgo, 0)
-		store.SetTimestamps(t, th, "Channels", ch.Id, monthAgo, monthAgo, 0)
-	}
-
-	opts := ArchiverOpts{
-		StaleChannelOpts: store.StaleChannelOpts{
-			AgeInDays:              30,
-			IncludeChannelTypeOpen: true,
-		},
-		ListOnly:  true,
-		BatchSize: 10,
-	}
-
-	results, err := ArchiveStaleChannels(context.Background(), th.Store, client, opts)
-	require.NoError(t, err)
-	assert.Equal(t, ReasonDone, results.ExitReason)
-	assert.Len(t, results.ChannelsArchived, 3)
 }
 
 func TestArchiveStaleChannelsWithAdminChannelAndExclude(t *testing.T) {
