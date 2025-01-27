@@ -54,7 +54,6 @@ func (b *Bot) SendPostWithAttachment(channelID string, msg string, file *model.F
 		Message:   msg,
 		FileIds:   []string{file.Id},
 	}
-	b.client.Log.Debug("Sending post with attachment", "post", post)
 	return b.client.Post.CreatePost(post)
 }
 
