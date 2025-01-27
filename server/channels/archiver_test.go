@@ -96,40 +96,8 @@ func TestArchiveStaleChannelsListMode(t *testing.T) {
 }
 
 func TestArchiveStaleChannelsWithAdminChannelAndExclude(t *testing.T) {
-	th := store.SetupHelper(t).SetupBasic(t)
+	th, client, testBot, adminChannel, channels, mockAPI := setupStaleChannelsTest(t)
 	defer th.TearDown()
-
-	mockAPI := &plugintest.API{}
-	mockAPI.On("LogDebug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
-		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
-	mockAPI.On("UploadFile", mock.Anything, mock.Anything, mock.Anything).Return(&model.FileInfo{Id: "test-file-id"}, nil)
-	mockAPI.On("CreatePost", mock.Anything).Return(&model.Post{}, nil)
-	mockAPI.On("GetBot", mock.Anything).Return(&model.Bot{}, nil)
-	mockAPI.On("EnsureBot", mock.Anything).Return("test-bot-id", nil)
-	mockAPI.On("GetServerVersion").Return("9.6.0")
-	mockAPI.On("KVSetWithOptions", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-	mockAPI.On("KVGet", mock.Anything).Return([]byte{}, nil)
-	mockAPI.On("EnsureBotUser", mock.Anything).Return("test-bot-id", nil)
-
-	client := pluginapi.NewClient(mockAPI, nil)
-	testBot, err := bot.New(client)
-	require.NoError(t, err)
-
-	// Create test channels including admin channel
-	adminChannel, err := th.CreateChannels(1, "admin-channel", th.User1.Id, th.Team1.Id)
-	require.NoError(t, err)
-	channels, err := th.CreateChannels(4, "archive-channel", th.User1.Id, th.Team1.Id)
-	require.NoError(t, err)
-
-	// Set channels as stale
-	for _, ch := range channels {
-		store.SetTimestamps(t, th, "Posts", ch.Id, monthAgo, monthAgo, 0)
-		store.SetTimestamps(t, th, "Channels", ch.Id, monthAgo, monthAgo, 0)
-	}
-
-	// Set the admin channel to a month old as well, this channel should not be stale
-	store.SetTimestamps(t, th, "Posts", adminChannel[0].Id, monthAgo, monthAgo, 0)
-	store.SetTimestamps(t, th, "Channels", adminChannel[0].Id, monthAgo, monthAgo, 0)
 
 	// Mock the channel deletion for all except excluded channel
 	for i, ch := range channels {
@@ -154,12 +122,45 @@ func TestArchiveStaleChannelsWithAdminChannelAndExclude(t *testing.T) {
 	assert.Equal(t, ReasonDone, results.ExitReason)
 	assert.Len(t, results.ChannelsArchived, 3) // Should be 3 since one is excluded
 
+	// Verify admin channel and excluded channel are not in results
+	for _, ch := range results.ChannelsArchived {
+		assert.NotContains(t, ch, adminChannel[0].Id, "Admin channel should not be in results")
+		assert.NotContains(t, ch, channels[0].Id, "Excluded channel should not be in results")
+	}
+
 	mockAPI.AssertNumberOfCalls(t, "DeleteChannel", 3)
 }
 
 func TestArchiveStaleChannelsListModeWithAdminChannelAndExclude(t *testing.T) {
-	th := store.SetupHelper(t).SetupBasic(t)
+	th, client, testBot, adminChannel, channels, _ := setupStaleChannelsTest(t)
 	defer th.TearDown()
+
+	opts := ArchiverOpts{
+		StaleChannelOpts: store.StaleChannelOpts{
+			AgeInDays:              30,
+			ExcludeChannels:        []string{channels[0].Id}, // Exclude first channel
+			IncludeChannelTypeOpen: true,
+			AdminChannel:           adminChannel[0].Id,
+		},
+		ListOnly:  true,
+		BatchSize: 10,
+		Bot:       testBot,
+	}
+
+	results, err := ArchiveStaleChannels(context.Background(), th.Store, client, opts)
+	require.NoError(t, err)
+	assert.Equal(t, ReasonDone, results.ExitReason)
+	assert.Len(t, results.ChannelsArchived, 3) // Should be 3 since one is excluded
+
+	// Verify admin channel and excluded channel are not in results
+	for _, ch := range results.ChannelsArchived {
+		assert.NotContains(t, ch, adminChannel[0].Id, "Admin channel should not be in results")
+		assert.NotContains(t, ch, channels[0].Id, "Excluded channel should not be in results")
+	}
+}
+
+func setupStaleChannelsTest(t *testing.T) (*store.TestHelper, *pluginapi.Client, *bot.Bot, []*model.Channel, []*model.Channel, *plugintest.API) {
+	th := store.SetupHelper(t).SetupBasic(t)
 
 	mockAPI := &plugintest.API{}
 	mockAPI.On("LogDebug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
@@ -193,20 +194,5 @@ func TestArchiveStaleChannelsListModeWithAdminChannelAndExclude(t *testing.T) {
 	store.SetTimestamps(t, th, "Posts", adminChannel[0].Id, monthAgo, monthAgo, 0)
 	store.SetTimestamps(t, th, "Channels", adminChannel[0].Id, monthAgo, monthAgo, 0)
 
-	opts := ArchiverOpts{
-		StaleChannelOpts: store.StaleChannelOpts{
-			AgeInDays:              30,
-			ExcludeChannels:        []string{channels[0].Id}, // Exclude first channel
-			IncludeChannelTypeOpen: true,
-			AdminChannel:           adminChannel[0].Id,
-		},
-		ListOnly:  true,
-		BatchSize: 10,
-		Bot:       testBot,
-	}
-
-	results, err := ArchiveStaleChannels(context.Background(), th.Store, client, opts)
-	require.NoError(t, err)
-	assert.Equal(t, ReasonDone, results.ExitReason)
-	assert.Len(t, results.ChannelsArchived, 3) // Should be 3 since one is excluded
+	return th, client, testBot, adminChannel, channels, mockAPI
 }
