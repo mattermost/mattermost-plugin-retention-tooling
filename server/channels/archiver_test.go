@@ -31,7 +31,7 @@ func TestArchiveStaleChannelsArchiveMode(t *testing.T) {
 	client := pluginapi.NewClient(mockAPI, nil)
 
 	// Create test channels
-	channels, err := th.CreateChannels(3, "archive-channel", th.User1.Id, th.Team1.Id)
+	channels, err := th.CreateChannels(3, "test-channel", th.User1.Id, th.Team1.Id)
 	require.NoError(t, err)
 
 	// Set channels as stale
@@ -51,6 +51,7 @@ func TestArchiveStaleChannelsArchiveMode(t *testing.T) {
 			IncludeChannelTypeOpen: true,
 		},
 		BatchSize: 10,
+		ListOnly:  false,
 	}
 
 	results, err := ArchiveStaleChannels(context.Background(), th.Store, client, opts)
@@ -115,6 +116,7 @@ func TestArchiveStaleChannelsWithAdminChannelAndExclude(t *testing.T) {
 		},
 		BatchSize: 10,
 		Bot:       testBot,
+		ListOnly:  false,
 	}
 
 	results, err := ArchiveStaleChannels(context.Background(), th.Store, client, opts)
