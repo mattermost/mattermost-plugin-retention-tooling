@@ -185,7 +185,12 @@ func (ca *ChannelArchiverCmd) handleArchive(args *model.CommandArgs, params map[
 	if list {
 		msg := ""
 		if ca.config.AdminChannel != "" {
-			msg = fmt.Sprintf("Channel list uploaded to %s.", ca.config.AdminChannel)
+			var channel *model.Channel
+			channel, err = ca.client.Channel.Get(ca.config.AdminChannel)
+			if err != nil {
+				return "", err
+			}
+			msg = fmt.Sprintf("Channel list uploaded to %s.", channel.Name)
 		} else {
 			ca.reportChannelList(args, results.ChannelsArchived)
 			msg = fmt.Sprintf("count: %d\n%s", len(results.ChannelsArchived), results.ExitReason)
