@@ -115,8 +115,7 @@ func archiveStaleChannels(ctx context.Context, sqlstore *store.SQLStore, client 
 
 		if !more {
 			if opts.StaleChannelOpts.AdminChannel != "" {
-				timeMs := time.Now().UnixMilli()
-				return handleAdminChannelPost(opts.Bot, &buffer, strconv.FormatInt(timeMs, 10)+"_archived-channels.txt", opts.StaleChannelOpts.AdminChannel, "The following channels have been archived:")
+				return handleAdminChannelPost(opts.Bot, &buffer, "archived", opts.StaleChannelOpts.AdminChannel, "The following channels have been archived:")
 			}
 			return nil
 		}
@@ -163,15 +162,16 @@ func listStaleChannels(ctx context.Context, sqlstore *store.SQLStore, opts Archi
 	}
 
 	if opts.StaleChannelOpts.AdminChannel != "" {
-		timeMs := time.Now().UnixMilli()
-		return handleAdminChannelPost(opts.Bot, &buffer, strconv.FormatInt(timeMs, 10)+"_stale-channels.txt", opts.StaleChannelOpts.AdminChannel, "The following channels have been identified as stale:")
+		return handleAdminChannelPost(opts.Bot, &buffer, "stale", opts.StaleChannelOpts.AdminChannel, "The following channels have been identified as stale:")
 	}
 
 	return nil
 }
 
-func handleAdminChannelPost(bot *bot.Bot, buffer *bytes.Buffer, fileName, adminChannel, msg string) error {
+func handleAdminChannelPost(bot *bot.Bot, buffer *bytes.Buffer, fileType string, adminChannel, msg string) error {
 	if adminChannel != "" {
+		timeMs := time.Now().UnixMilli()
+		fileName := fmt.Sprintf("%d_%s-channels.txt", timeMs, fileType)
 		fileInfo, err := bot.UploadFile(buffer, fileName, adminChannel)
 		if err != nil {
 			return fmt.Errorf("failed to upload file: %w", err)
