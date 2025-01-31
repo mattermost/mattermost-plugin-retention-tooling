@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	pluginapi "github.com/mattermost/mattermost/server/public/pluginapi"
@@ -114,10 +113,7 @@ func archiveStaleChannels(ctx context.Context, sqlstore *store.SQLStore, client 
 		}
 
 		if !more {
-			if opts.StaleChannelOpts.AdminChannel != "" {
-				return handleAdminChannelPost(opts.Bot, &buffer, "archived", opts.StaleChannelOpts.AdminChannel, "The following channels have been archived:")
-			}
-			return nil
+			return handleAdminChannelPost(opts.Bot, &buffer, "archived", opts.StaleChannelOpts.AdminChannel, "The following channels have been archived:")
 		}
 
 		// sleep so we don't peg the cpu; longer here to allow websocket events to flush
@@ -161,11 +157,7 @@ func listStaleChannels(ctx context.Context, sqlstore *store.SQLStore, opts Archi
 		}
 	}
 
-	if opts.StaleChannelOpts.AdminChannel != "" {
-		return handleAdminChannelPost(opts.Bot, &buffer, "stale", opts.StaleChannelOpts.AdminChannel, "The following channels have been identified as stale:")
-	}
-
-	return nil
+	return handleAdminChannelPost(opts.Bot, &buffer, "stale", opts.StaleChannelOpts.AdminChannel, "The following channels have been identified as stale:")
 }
 
 func handleAdminChannelPost(bot *bot.Bot, buffer *bytes.Buffer, fileType string, adminChannel, msg string) error {
