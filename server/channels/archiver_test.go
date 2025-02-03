@@ -165,16 +165,22 @@ func setupStaleChannelsTest(t *testing.T) (*store.TestHelper, *pluginapi.Client,
 	th := store.SetupHelper(t).SetupBasic(t)
 
 	mockAPI := &plugintest.API{}
+	mockString := mock.AnythingOfType("string")
+	mockBytes := mock.AnythingOfType("[]uint8")
+	mockPost := mock.AnythingOfType("*model.Post")
+	mockBot := mock.AnythingOfType("*model.Bot")
+	mockKVOptions := mock.AnythingOfType("model.PluginKVSetOptions")
+
 	mockAPI.On("LogDebug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
-	mockAPI.On("UploadFile", mock.Anything, mock.Anything, mock.Anything).Return(&model.FileInfo{Id: "test-file-id"}, nil)
-	mockAPI.On("CreatePost", mock.Anything).Return(&model.Post{}, nil)
-	mockAPI.On("GetBot", mock.Anything).Return(&model.Bot{}, nil)
-	mockAPI.On("EnsureBot", mock.Anything).Return("test-bot-id", nil)
+	mockAPI.On("UploadFile", mockBytes, mockString, mockString).Return(&model.FileInfo{Id: "test-file-id"}, nil)
+	mockAPI.On("CreatePost", mockPost).Return(&model.Post{}, nil)
+	mockAPI.On("GetBot", mockString).Return(&model.Bot{}, nil)
+	mockAPI.On("EnsureBot", mockBot).Return("test-bot-id", nil)
 	mockAPI.On("GetServerVersion").Return("9.6.0")
-	mockAPI.On("KVSetWithOptions", mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-	mockAPI.On("KVGet", mock.Anything).Return([]byte{}, nil)
-	mockAPI.On("EnsureBotUser", mock.Anything).Return("test-bot-id", nil)
+	mockAPI.On("KVSetWithOptions", mockString, mockBytes, mockKVOptions).Return(true, nil)
+	mockAPI.On("KVGet", mockString).Return([]byte{}, nil)
+	mockAPI.On("EnsureBotUser", mockBot).Return("test-bot-id", nil)
 
 	client := pluginapi.NewClient(mockAPI, nil)
 	testBot, err := bot.New(client)
