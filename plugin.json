@@ -103,7 +103,7 @@
             {
                 "key": "ExcludeChannels",
                 "display_name": "Exclude channels:",
-                "type": "test",
+                "type": "text",
                 "help_text": "Comma separated list of channel names or IDs that are excluded from auto-archiving.",
                 "placeholder": "",
                 "default": ""

@@ -8,13 +8,13 @@ import (
 
 	"github.com/wiggin77/merror"
 
-	pluginapi "github.com/mattermost/mattermost-plugin-api"
-	"github.com/mattermost/mattermost-plugin-api/cluster"
 	"github.com/mattermost/mattermost-plugin-retention-tooling/server/bot"
 	"github.com/mattermost/mattermost-plugin-retention-tooling/server/channels"
 	"github.com/mattermost/mattermost-plugin-retention-tooling/server/config"
 	"github.com/mattermost/mattermost-plugin-retention-tooling/server/store"
-	"github.com/mattermost/mattermost-server/v6/plugin"
+	"github.com/mattermost/mattermost/server/public/plugin"
+	pluginapi "github.com/mattermost/mattermost/server/public/pluginapi"
+	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
 )
 
 type ChannelArchiverJob struct {
