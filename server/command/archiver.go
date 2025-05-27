@@ -156,6 +156,17 @@ func (ca *ChannelArchiverCmd) handleArchive(args *model.CommandArgs, params map[
 		exclude = strings.Split(ex, ",")
 	}
 
+	// Include the configured excluded channels
+	if ca.config.ExcludeChannels != "" {
+		excludedChannelsNoSpaces := strings.ReplaceAll(ca.config.ExcludeChannels, " ", ",")
+		excludedChannelsSlice := strings.Split(excludedChannelsNoSpaces, ",")
+		if len(exclude) > 0 {
+			exclude = append(exclude, excludedChannelsSlice...)
+		} else {
+			exclude = excludedChannelsSlice
+		}
+	}
+
 	opts := channels.ArchiverOpts{
 		StaleChannelOpts: store.StaleChannelOpts{
 			AgeInDays:                 days,
@@ -196,6 +207,15 @@ func (ca *ChannelArchiverCmd) handleArchive(args *model.CommandArgs, params map[
 			msg = fmt.Sprintf("count: %d\n%s", len(results.ChannelsArchived), results.ExitReason)
 		}
 		return msg, nil
+	}
+
+	if ca.config.AdminChannel != "" {
+		var channel *model.Channel
+		channel, err = ca.client.Channel.Get(ca.config.AdminChannel)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d channels archived in %v. Archived channel list uploaded to %s.\n%s", len(results.ChannelsArchived), results.Duration, channel.Name, results.ExitReason), nil
 	}
 
 	return fmt.Sprintf("%d channels archived in %v.\n%s",
