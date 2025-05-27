@@ -10,7 +10,7 @@ This plugin provides data retention tools to augment the [data retention capabil
 
 Removes a specified user from all teams and channels, meant to be used after a user is deactivated.
 
-The process is started by sending an HTTP POST request to the Mattermost server at `/plugins/deactivated-user-cleanup/remove_user_from_all_teams_and_channels`. It accepts either of the following JSON request bodies:
+The process is started by sending an HTTP POST request to the Mattermost server at `/plugins/mattermost-plugin-retention-tooling/remove_user_from_all_teams_and_channels`. It accepts either of the following JSON request bodies:
 
 ```
 {"user_id": "someuserid"}
