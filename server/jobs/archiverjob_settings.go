@@ -14,13 +14,15 @@ const (
 )
 
 type ChannelArchiverJobSettings struct {
-	EnableChannelArchiver bool
-	AgeInDays             int
-	Frequency             Frequency
-	DayOfWeek             int
-	TimeOfDay             time.Time
-	ExcludeChannels       []string
-	BatchSize             int
+	EnableChannelArchiver           bool
+	EnableChannelArchiverDryRunMode bool
+	AgeInDays                       int
+	Frequency                       Frequency
+	DayOfWeek                       int
+	TimeOfDay                       time.Time
+	ExcludeChannels                 []string
+	BatchSize                       int
+	AdminChannel                    string
 }
 
 func (c *ChannelArchiverJobSettings) Clone() *ChannelArchiverJobSettings {
@@ -28,12 +30,14 @@ func (c *ChannelArchiverJobSettings) Clone() *ChannelArchiverJobSettings {
 	copy(exclude, c.ExcludeChannels)
 
 	return &ChannelArchiverJobSettings{
-		EnableChannelArchiver: c.EnableChannelArchiver,
-		AgeInDays:             c.AgeInDays,
-		Frequency:             c.Frequency,
-		TimeOfDay:             c.TimeOfDay,
-		ExcludeChannels:       exclude,
-		BatchSize:             c.BatchSize,
+		EnableChannelArchiver:           c.EnableChannelArchiver,
+		EnableChannelArchiverDryRunMode: c.EnableChannelArchiverDryRunMode,
+		AgeInDays:                       c.AgeInDays,
+		Frequency:                       c.Frequency,
+		TimeOfDay:                       c.TimeOfDay,
+		ExcludeChannels:                 exclude,
+		BatchSize:                       c.BatchSize,
+		AdminChannel:                    c.AdminChannel,
 	}
 }
 
@@ -89,5 +93,6 @@ func parseChannelArchiverJobSettings(cfg *config.Configuration) (*ChannelArchive
 		DayOfWeek:             dow,
 		TimeOfDay:             tod,
 		ExcludeChannels:       excludes,
+		AdminChannel:          cfg.AdminChannel,
 	}, nil
 }

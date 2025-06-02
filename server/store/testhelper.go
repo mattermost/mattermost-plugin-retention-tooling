@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	sq "github.com/Masterminds/squirrel"
 	mmcontainer "github.com/mattermost/testcontainers-mattermost-go"
 	"github.com/stretchr/testify/require"
 
@@ -175,6 +176,41 @@ func (th *TestHelper) CreateReactions(posts []*model.Post, userID string) ([]*mo
 		reactions = append(reactions, reaction)
 	}
 	return reactions, nil
+}
+
+func SetTimestamps(t *testing.T, th *TestHelper, table string, channelID string, createAt, updateAt, deleteAt int64) {
+	query := th.Store.builder.Update(table)
+
+	if createAt >= 0 {
+		query = query.Set("CreateAt", createAt)
+	}
+	if updateAt >= 0 {
+		query = query.Set("UpdateAt", updateAt)
+	}
+	if deleteAt >= 0 {
+		query = query.Set("DeleteAt", deleteAt)
+	}
+
+	switch table {
+	case "Channels":
+		query = query.Where(sq.Eq{"Id": channelID})
+	case "Posts":
+		query = query.Where(sq.Eq{"ChannelId": channelID})
+	case "Reactions":
+		// `reactions.channelid` does not exist in all server versions we need to support, therefore
+		// we need to update all reactions belonging to posts in the channel.
+		query = query.Where(sq.Eq{"ChannelId": channelID})
+	default:
+		panic("invalid table name")
+	}
+
+	result, err := query.Exec()
+	require.NoError(t, err)
+
+	rowsAffected, err := result.RowsAffected()
+	require.NoError(t, err)
+
+	t.Logf("SetTimestamps for channelID %s, for %s, %d rows affected.", channelID, table, rowsAffected)
 }
 
 // storeWrapper is a wrapper for MainHelper that implements SQLStoreSource interface.

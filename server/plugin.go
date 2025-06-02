@@ -40,6 +40,8 @@ type Plugin struct {
 	SQLStore *store.SQLStore
 
 	channelArchiverCmd *command.ChannelArchiverCmd
+
+	channelArchiverJob *jobs.ChannelArchiverJob
 	jobManager         *jobs.JobManager
 }
 
@@ -68,7 +70,7 @@ func (p *Plugin) OnActivate() error {
 	p.SQLStore = SQLStore
 
 	// Register slash command for channel archiver
-	p.channelArchiverCmd, err = command.RegisterChannelArchiver(p.Client, p.SQLStore)
+	p.channelArchiverCmd, err = command.RegisterChannelArchiver(p.Client, p.SQLStore, p.getConfiguration())
 	if err != nil {
 		return fmt.Errorf("cannot register channel archiver slash command: %w", err)
 	}
@@ -77,11 +79,11 @@ func (p *Plugin) OnActivate() error {
 	p.jobManager = jobs.NewJobManager(&p.Client.Log)
 
 	// Create job for channel archiver
-	channelArchiverJob, err := jobs.NewChannelArchiverJob(ChannelArchiverJobID, p.API, p.Client, SQLStore)
+	p.channelArchiverJob, err = jobs.NewChannelArchiverJob(ChannelArchiverJobID, p.API, p.Client, SQLStore)
 	if err != nil {
 		return fmt.Errorf("cannot create channel archiver job: %w", err)
 	}
-	if err := p.jobManager.AddJob(channelArchiverJob); err != nil {
+	if err := p.jobManager.AddJob(p.channelArchiverJob); err != nil {
 		return fmt.Errorf("cannot add channel archiver job: %w", err)
 	}
 	_ = p.jobManager.OnConfigurationChange(p.getConfiguration())

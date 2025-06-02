@@ -19,6 +19,7 @@ type StaleChannelOpts struct {
 	IncludeChannelTypePrivate bool
 	IncludeChannelTypeDirect  bool
 	IncludeChannelTypeGroup   bool
+	AdminChannel              string
 }
 
 func (ss *SQLStore) GetStaleChannels(opts StaleChannelOpts, page int, pageSize int) ([]*model.Channel, bool, error) {
@@ -27,6 +28,9 @@ func (ss *SQLStore) GetStaleChannels(opts StaleChannelOpts, page int, pageSize i
 	excludeChannels := make([]string, 0)
 	excludeChannels = append(excludeChannels, opts.ExcludeChannels...)
 	excludeChannels = append(excludeChannels, defaultChannels...)
+	if opts.AdminChannel != "" {
+		excludeChannels = append(excludeChannels, opts.AdminChannel)
+	}
 
 	// find all channels where no posts or reactions have been modified,deleted since the olderThan timestamp.
 	query := ss.builder.Select("ch.Id", "ch.Name").Distinct().

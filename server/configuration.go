@@ -64,6 +64,17 @@ func (p *Plugin) OnConfigurationChange() error {
 		}
 	}
 
+	if p.channelArchiverCmd != nil {
+		p.channelArchiverCmd.OnConfigurationChange(configuration)
+	}
+
+	if configuration.AdminChannel != "" {
+		// Ensure the admin channel exists
+		if _, err := p.API.GetChannel(configuration.AdminChannel); err != nil {
+			return errors.Wrap(err, "failed to get admin channel")
+		}
+	}
+
 	p.setConfiguration(configuration)
 
 	return nil

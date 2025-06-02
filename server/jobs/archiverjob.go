@@ -179,9 +179,11 @@ func (j *ChannelArchiverJob) run() {
 			IncludeChannelTypeOpen:    true,
 			IncludeChannelTypePrivate: true,
 			ExcludeChannels:           settings.ExcludeChannels,
+			AdminChannel:              settings.AdminChannel,
 		},
 		BatchSize: settings.BatchSize,
 		Bot:       j.bot,
+		ListOnly:  settings.EnableChannelArchiverDryRunMode,
 	}
 
 	results, err := channels.ArchiveStaleChannels(ctx, j.sqlstore, j.client, opts)

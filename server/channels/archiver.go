@@ -1,6 +1,7 @@
 package channels
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -72,6 +73,9 @@ func ArchiveStaleChannels(ctx context.Context, sqlstore *store.SQLStore, client 
 }
 
 func archiveStaleChannels(ctx context.Context, sqlstore *store.SQLStore, client *pluginapi.Client, opts ArchiverOpts, results *ArchiverResults) error {
+	var buffer bytes.Buffer
+
+	buffer.WriteString("Archived Channels:\n")
 	for {
 		staleChannels, more, err := sqlstore.GetStaleChannels(opts.StaleChannelOpts, 0, opts.BatchSize)
 		if err != nil {
@@ -89,7 +93,11 @@ func archiveStaleChannels(ctx context.Context, sqlstore *store.SQLStore, client 
 			if appErr != nil {
 				return fmt.Errorf("cannot archive channel %s (%s): %w", ch.Name, ch.Id, err)
 			}
-			results.ChannelsArchived = append(results.ChannelsArchived, fmt.Sprintf("%s (%s)", ch.Id, ch.Name))
+			archivedChannelStr := fmt.Sprintf("%s (%s)\n", ch.Name, ch.Id)
+			results.ChannelsArchived = append(results.ChannelsArchived, archivedChannelStr)
+			if opts.StaleChannelOpts.AdminChannel != "" {
+				buffer.WriteString(archivedChannelStr)
+			}
 
 			// sleep a short time so we don't peg the cpu
 			select {
@@ -105,7 +113,7 @@ func archiveStaleChannels(ctx context.Context, sqlstore *store.SQLStore, client 
 		}
 
 		if !more {
-			return nil
+			return handleAdminChannelPost(opts.Bot, &buffer, "archived", opts.StaleChannelOpts.AdminChannel, "The following channels have been archived:")
 		}
 
 		// sleep so we don't peg the cpu; longer here to allow websocket events to flush
@@ -120,6 +128,9 @@ func archiveStaleChannels(ctx context.Context, sqlstore *store.SQLStore, client 
 
 func listStaleChannels(ctx context.Context, sqlstore *store.SQLStore, opts ArchiverOpts, results *ArchiverResults) error {
 	page := 0
+	var buffer bytes.Buffer
+
+	buffer.WriteString("Stale Channels:\n")
 	for {
 		staleChannels, more, err := sqlstore.GetStaleChannels(opts.StaleChannelOpts, page, opts.BatchSize)
 		if err != nil {
@@ -129,11 +140,12 @@ func listStaleChannels(ctx context.Context, sqlstore *store.SQLStore, opts Archi
 		page++
 
 		for _, ch := range staleChannels {
+			buffer.WriteString(fmt.Sprintf("%s (%s)\n", ch.Name, ch.Id))
 			results.ChannelsArchived = append(results.ChannelsArchived, fmt.Sprintf("**%s** (%s)", ch.Name, ch.Id))
 		}
 
 		if !more {
-			return nil
+			break
 		}
 
 		// sleep a short time so we don't peg the cpu
@@ -144,4 +156,24 @@ func listStaleChannels(ctx context.Context, sqlstore *store.SQLStore, opts Archi
 			return nil
 		}
 	}
+
+	return handleAdminChannelPost(opts.Bot, &buffer, "stale", opts.StaleChannelOpts.AdminChannel, "The following channels have been identified as stale:")
+}
+
+func handleAdminChannelPost(bot *bot.Bot, buffer *bytes.Buffer, fileType string, adminChannel, msg string) error {
+	if adminChannel != "" {
+		timeMs := time.Now().UnixMilli()
+		fileName := fmt.Sprintf("%d_%s-channels.txt", timeMs, fileType)
+		fileInfo, err := bot.UploadFile(buffer, fileName, adminChannel)
+		if err != nil {
+			return fmt.Errorf("failed to upload file: %w", err)
+		}
+
+		err = bot.SendPostWithAttachment(adminChannel, msg, fileInfo)
+		if err != nil {
+			return fmt.Errorf("failed to create post: %w", err)
+		}
+	}
+
+	return nil
 }

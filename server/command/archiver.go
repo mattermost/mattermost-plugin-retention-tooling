@@ -37,6 +37,7 @@ type ChannelArchiverCmd struct {
 	sqlStore *store.SQLStore
 	commands []*model.AutocompleteData
 	bot      *bot.Bot
+	config   *config.Configuration
 }
 
 func getDefaultBatchSize(list bool) int {
@@ -47,7 +48,7 @@ func getDefaultBatchSize(list bool) int {
 }
 
 // RegisterChannelArchiver is called by the plugin to register all necessary commands
-func RegisterChannelArchiver(client *pluginapi.Client, store *store.SQLStore) (*ChannelArchiverCmd, error) {
+func RegisterChannelArchiver(client *pluginapi.Client, store *store.SQLStore, configuration *config.Configuration) (*ChannelArchiverCmd, error) {
 	cmdArchive := model.NewAutocompleteData("archive", "", "Archive stale channels")
 	cmdList := model.NewAutocompleteData("list", "", "List stale channels that would be archived")
 	cmdHelp := model.NewAutocompleteData("help", "", "Display help text")
@@ -99,7 +100,12 @@ func RegisterChannelArchiver(client *pluginapi.Client, store *store.SQLStore) (*
 		sqlStore: store,
 		commands: commands,
 		bot:      bot,
+		config:   configuration,
 	}, nil
+}
+
+func (ca *ChannelArchiverCmd) OnConfigurationChange(newConfig *config.Configuration) {
+	ca.config = newConfig
 }
 
 func (ca *ChannelArchiverCmd) Execute(args *model.CommandArgs) (*model.CommandResponse, error) {
@@ -150,12 +156,24 @@ func (ca *ChannelArchiverCmd) handleArchive(args *model.CommandArgs, params map[
 		exclude = strings.Split(ex, ",")
 	}
 
+	// Include the configured excluded channels
+	if ca.config.ExcludeChannels != "" {
+		excludedChannelsNoSpaces := strings.ReplaceAll(ca.config.ExcludeChannels, " ", ",")
+		excludedChannelsSlice := strings.Split(excludedChannelsNoSpaces, ",")
+		if len(exclude) > 0 {
+			exclude = append(exclude, excludedChannelsSlice...)
+		} else {
+			exclude = excludedChannelsSlice
+		}
+	}
+
 	opts := channels.ArchiverOpts{
 		StaleChannelOpts: store.StaleChannelOpts{
 			AgeInDays:                 days,
 			ExcludeChannels:           exclude,
 			IncludeChannelTypeOpen:    true,
 			IncludeChannelTypePrivate: true,
+			AdminChannel:              ca.config.AdminChannel,
 		},
 		BatchSize: batchSize,
 		ListOnly:  list,
@@ -176,9 +194,28 @@ func (ca *ChannelArchiverCmd) handleArchive(args *model.CommandArgs, params map[
 	}
 
 	if list {
-		ca.reportChannelList(args, results.ChannelsArchived)
-		msg := fmt.Sprintf("count: %d\n%s", len(results.ChannelsArchived), results.ExitReason)
+		msg := ""
+		if ca.config.AdminChannel != "" {
+			var channel *model.Channel
+			channel, err = ca.client.Channel.Get(ca.config.AdminChannel)
+			if err != nil {
+				return "", err
+			}
+			msg = fmt.Sprintf("Channel list uploaded to %s.", channel.Name)
+		} else {
+			ca.reportChannelList(args, results.ChannelsArchived)
+			msg = fmt.Sprintf("count: %d\n%s", len(results.ChannelsArchived), results.ExitReason)
+		}
 		return msg, nil
+	}
+
+	if ca.config.AdminChannel != "" {
+		var channel *model.Channel
+		channel, err = ca.client.Channel.Get(ca.config.AdminChannel)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d channels archived in %v. Archived channel list uploaded to %s.\n%s", len(results.ChannelsArchived), results.Duration, channel.Name, results.ExitReason), nil
 	}
 
 	return fmt.Sprintf("%d channels archived in %v.\n%s",

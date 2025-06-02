@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	sq "github.com/Masterminds/squirrel"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -42,37 +40,37 @@ func TestSQLStore_GetStaleChannels(t *testing.T) {
 	}
 
 	// channel 0 - adjust all timestamps to 1 year old (stale)
-	setTimestamps(t, th, "Channels", channels[0].Id, yearAgo, yearAgo, 0)
-	setTimestamps(t, th, "Posts", channels[0].Id, yearAgo, yearAgo, 0)
-	setTimestamps(t, th, "Reactions", channels[0].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Channels", channels[0].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Posts", channels[0].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Reactions", channels[0].Id, yearAgo, yearAgo, 0)
 
 	// channel 1 - posts and reactions deleted a year ago (stale)
-	setTimestamps(t, th, "Channels", channels[1].Id, yearAgo, yearAgo, 0)
-	setTimestamps(t, th, "Posts", channels[1].Id, yearAgo, yearAgo, yearAgo)
-	setTimestamps(t, th, "Reactions", channels[1].Id, yearAgo, yearAgo, yearAgo)
+	SetTimestamps(t, th, "Channels", channels[1].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Posts", channels[1].Id, yearAgo, yearAgo, yearAgo)
+	SetTimestamps(t, th, "Reactions", channels[1].Id, yearAgo, yearAgo, yearAgo)
 
 	// channels 2-4 - all timestamps current (not stale)
 
 	// channel 5 - posts and reactions deleted a week ago (not stale)
-	setTimestamps(t, th, "Channels", channels[5].Id, yearAgo, yearAgo, 0)
-	setTimestamps(t, th, "Posts", channels[5].Id, yearAgo, weekAgo, weekAgo)
-	setTimestamps(t, th, "Reactions", channels[5].Id, yearAgo, weekAgo, weekAgo)
+	SetTimestamps(t, th, "Channels", channels[5].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Posts", channels[5].Id, yearAgo, weekAgo, weekAgo)
+	SetTimestamps(t, th, "Reactions", channels[5].Id, yearAgo, weekAgo, weekAgo)
 
 	// channel 6 - old channel timstamps, new posts (not stale)
-	setTimestamps(t, th, "Channels", channels[6].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Channels", channels[6].Id, yearAgo, yearAgo, 0)
 
 	// channel 7 - deleted channel (not stale)
-	setTimestamps(t, th, "Channels", channels[7].Id, yearAgo, yearAgo, weekAgo)
+	SetTimestamps(t, th, "Channels", channels[7].Id, yearAgo, yearAgo, weekAgo)
 
 	// channel 8 - adjust post timestamps to 1 year old, leave reactions (not stale)
-	setTimestamps(t, th, "Channels", channels[8].Id, yearAgo, yearAgo, 0)
-	setTimestamps(t, th, "Posts", channels[8].Id, yearAgo, yearAgo, 0)
-	setTimestamps(t, th, "Reactions", channels[8].Id, weekAgo, weekAgo, weekAgo)
+	SetTimestamps(t, th, "Channels", channels[8].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Posts", channels[8].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Reactions", channels[8].Id, weekAgo, weekAgo, weekAgo)
 
 	// channel 9 - adjust all post/reaction timestamps to 1 week old (not stale)
-	setTimestamps(t, th, "Channels", channels[9].Id, yearAgo, weekAgo, 0)
-	setTimestamps(t, th, "Posts", channels[9].Id, yearAgo, weekAgo, 0)
-	setTimestamps(t, th, "Reactions", channels[9].Id, weekAgo, weekAgo, 0)
+	SetTimestamps(t, th, "Channels", channels[9].Id, yearAgo, weekAgo, 0)
+	SetTimestamps(t, th, "Posts", channels[9].Id, yearAgo, weekAgo, 0)
+	SetTimestamps(t, th, "Reactions", channels[9].Id, weekAgo, weekAgo, 0)
 
 	// fetch channels stale for 30 days or more
 	opts := StaleChannelOpts{
@@ -106,10 +104,10 @@ func TestSQLStore_GetStaleChannelsEmptyChannel(t *testing.T) {
 	require.NoError(t, err)
 
 	// make 0,2 stale
-	setTimestamps(t, th, "Channels", channels[0].Id, yearAgo, yearAgo, 0)
-	setTimestamps(t, th, "Channels", channels[2].Id, yearAgo, yearAgo, 0)
-	setTimestamps(t, th, "Posts", channels[0].Id, yearAgo, yearAgo, 0)
-	setTimestamps(t, th, "Posts", channels[2].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Channels", channels[0].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Channels", channels[2].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Posts", channels[0].Id, yearAgo, yearAgo, 0)
+	SetTimestamps(t, th, "Posts", channels[2].Id, yearAgo, yearAgo, 0)
 
 	opts := StaleChannelOpts{
 		AgeInDays:              30,
@@ -137,10 +135,10 @@ func TestSQLStore_GetStaleChannelsPagnation(t *testing.T) {
 	// make 50 of them stale
 	for i, ch := range channels {
 		if i < 50 {
-			setTimestamps(t, th, "Channels", ch.Id, yearAgo, yearAgo, 0)
+			SetTimestamps(t, th, "Channels", ch.Id, yearAgo, yearAgo, 0)
 		}
 		// When you create the channel it creates a post, so we need to update the post timestamp
-		setTimestamps(t, th, "Posts", ch.Id, yearAgo, yearAgo, 0)
+		SetTimestamps(t, th, "Posts", ch.Id, yearAgo, yearAgo, 0)
 	}
 
 	const pageSize = 10
@@ -187,10 +185,10 @@ func TestSQLStore_GetStaleChannelsExclude(t *testing.T) {
 	// make first 5 stale
 	for i, ch := range channels {
 		if i < 5 {
-			setTimestamps(t, th, "Channels", ch.Id, yearAgo, yearAgo, 0)
+			SetTimestamps(t, th, "Channels", ch.Id, yearAgo, yearAgo, 0)
 		}
 		// When you create the channel it creates a post, so we need to update the post timestamp
-		setTimestamps(t, th, "Posts", ch.Id, yearAgo, yearAgo, 0)
+		SetTimestamps(t, th, "Posts", ch.Id, yearAgo, yearAgo, 0)
 	}
 
 	// exclude the first 3
@@ -228,41 +226,6 @@ func TestSQLStore_GetStaleChannelsNone(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, more)
 	assert.Empty(t, staleChannels)
-}
-
-func setTimestamps(t *testing.T, th *TestHelper, table string, channelID string, createAt, updateAt, deleteAt int64) {
-	query := th.Store.builder.Update(table)
-
-	if createAt >= 0 {
-		query = query.Set("CreateAt", createAt)
-	}
-	if updateAt >= 0 {
-		query = query.Set("UpdateAt", updateAt)
-	}
-	if deleteAt >= 0 {
-		query = query.Set("DeleteAt", deleteAt)
-	}
-
-	switch table {
-	case "Channels":
-		query = query.Where(sq.Eq{"Id": channelID})
-	case "Posts":
-		query = query.Where(sq.Eq{"ChannelId": channelID})
-	case "Reactions":
-		// `reactions.channelid` does not exist in all server versions we need to support, therefore
-		// we need to update all reactions belonging to posts in the channel.
-		query = query.Where(sq.Eq{"ChannelId": channelID})
-	default:
-		panic("invalid table name")
-	}
-
-	result, err := query.Exec()
-	require.NoError(t, err)
-
-	rowsAffected, err := result.RowsAffected()
-	require.NoError(t, err)
-
-	t.Logf("setTimestamps for channelID %s, for %s, %d rows affected.", channelID, table, rowsAffected)
 }
 
 func extractChannelIDs(channels []*model.Channel) []string {

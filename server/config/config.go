@@ -33,13 +33,15 @@ var (
 // If you add non-reference types to your Configuration struct, be sure to rewrite Clone as a deep
 // copy appropriate for your types.
 type Configuration struct {
-	EnableChannelArchiver bool
-	AgeInDays             int
-	Frequency             string
-	DayOfWeek             string
-	TimeOfDay             string
-	ExcludeChannels       string
-	BatchSize             int
+	EnableChannelArchiver           bool
+	AgeInDays                       int
+	Frequency                       string
+	DayOfWeek                       string
+	TimeOfDay                       string
+	ExcludeChannels                 string
+	BatchSize                       int
+	AdminChannel                    string
+	EnableChannelArchiverDryRunMode bool
 }
 
 func NewConfiguration() *Configuration {
