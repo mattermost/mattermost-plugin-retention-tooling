@@ -4,38 +4,19 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-retention-tooling/server/config"
 )
-
-// configuration captures the plugin's external configuration as exposed in the Mattermost server
-// configuration, as well as values computed from the configuration. Any public fields will be
-// deserialized from the Mattermost server configuration in OnConfigurationChange.
-//
-// As plugins are inherently concurrent (hooks being called asynchronously), and the plugin
-// configuration can change at any time, access to the configuration must be synchronized. The
-// strategy used in this plugin is to guard a pointer to the configuration, and clone the entire
-// struct whenever it changes. You may replace this with whatever strategy you choose.
-//
-// If you add non-reference types to your configuration struct, be sure to rewrite Clone as a deep
-// copy appropriate for your types.
-type configuration struct {
-}
-
-// Clone shallow copies the configuration. Your implementation may require a deep copy if
-// your configuration has reference types.
-func (c *configuration) Clone() *configuration {
-	var clone = *c
-	return &clone
-}
 
 // getConfiguration retrieves the active configuration under lock, making it safe to use
 // concurrently. The active configuration may change underneath the client of this method, but
 // the struct returned by this API call is considered immutable.
-func (p *Plugin) getConfiguration() *configuration {
+func (p *Plugin) getConfiguration() *config.Configuration {
 	p.configurationLock.RLock()
 	defer p.configurationLock.RUnlock()
 
 	if p.configuration == nil {
-		return &configuration{}
+		return &config.Configuration{}
 	}
 
 	return p.configuration
@@ -50,7 +31,7 @@ func (p *Plugin) getConfiguration() *configuration {
 // This method panics if setConfiguration is called with the existing configuration. This almost
 // certainly means that the configuration was modified without being cloned and may result in
 // an unsafe access.
-func (p *Plugin) setConfiguration(configuration *configuration) {
+func (p *Plugin) setConfiguration(configuration *config.Configuration) {
 	p.configurationLock.Lock()
 	defer p.configurationLock.Unlock()
 
@@ -70,11 +51,28 @@ func (p *Plugin) setConfiguration(configuration *configuration) {
 
 // OnConfigurationChange is invoked when configuration changes may have been made.
 func (p *Plugin) OnConfigurationChange() error {
-	var configuration = new(configuration)
+	var configuration = config.NewConfiguration()
 
 	// Load the public configuration fields from the Mattermost server configuration.
 	if err := p.API.LoadPluginConfiguration(configuration); err != nil {
 		return errors.Wrap(err, "failed to load plugin configuration")
+	}
+
+	if p.jobManager != nil {
+		if err := p.jobManager.OnConfigurationChange(configuration); err != nil {
+			return err
+		}
+	}
+
+	if p.channelArchiverCmd != nil {
+		p.channelArchiverCmd.OnConfigurationChange(configuration)
+	}
+
+	if configuration.AdminChannel != "" {
+		// Ensure the admin channel exists
+		if _, err := p.API.GetChannel(configuration.AdminChannel); err != nil {
+			return errors.Wrap(err, "failed to get admin channel")
+		}
 	}
 
 	p.setConfiguration(configuration)
