@@ -33,7 +33,7 @@
                 "key": "EnableChannelArchiverDryRunMode",
                 "display_name": "Archiver dry run mode:",
                 "type": "bool",
-                "help_text": "When enabled the Channel Archiver won't automatically delete stale channels. Stale channels will be posted to the configured admin channel.",
+                "help_text": "When enabled the Channel Archiver won't automatically archive stale channels. Stale channels will be posted to the configured admin channel.",
                 "placeholder": "",
                 "default": false
             },
