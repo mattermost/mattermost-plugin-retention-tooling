@@ -37,6 +37,14 @@
                 "placeholder": "",
                 "default": false
             },
+
+            {
+                "key": "AdminChannel",
+                "display_name": "Admin channel:",
+                "type": "text",
+                "help_text": "Channel ID where the Channel Archiver will post archiver job updates.",
+                "default": ""
+            },
             {
                 "key": "AgeInDays",
                 "display_name": "Days of inactivity:",
@@ -106,7 +114,7 @@
                 "key": "TimeOfDay",
                 "display_name": "Time of day:",
                 "type": "text",
-                "help_text": "Time of day to run the Channel Archiver in the form 'HH:MM ±HHMM' (e.g. '3:00am -0700').  Use +0000 for UTC.",
+                "help_text": "Time to run the Channel Archiver. Format: 'h:mmam/pm ±HHMM' (e.g. '1:00am -0700' for 1 AM Pacific, '9:30pm +0100' for 9:30 PM Central Europe, '2:00pm +0000' for 2 PM UTC). The timezone offset is required.",
                 "default": "1:00am -0700"
             },            
             {
@@ -123,13 +131,6 @@
                 "type": "number",
                 "help_text": "Channels will be archived in batches of this size to avoid stressing the server(s) or database(s).",
                 "default": 100
-            },
-            {
-                "key": "AdminChannel",
-                "display_name": "Admin channel:",
-                "type": "text",
-                "help_text": "Channel ID where the Channel Archiver will post archiver job updates.",
-                "default": ""
             }
         ]
     }
