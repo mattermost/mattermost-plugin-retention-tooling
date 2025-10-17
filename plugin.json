@@ -4,9 +4,9 @@
     "description": "Provides additional tools for data retention.",
     "homepage_url": "https://github.com/mattermost/mattermost-plugin-retention-tooling",
     "support_url": "https://github.com/mattermost/mattermost-plugin-retention-tooling/issues",
-    "release_notes_url": "https://github.com/mattermost/mattermost-plugin-retention-tooling/releases/tag/v0.1.0",
+    "release_notes_url": "https://github.com/mattermost/mattermost-plugin-retention-tooling/releases/tag/v0.4.0",
     "icon_path": "assets/archiver.svg",
-    "version": "0.3.1",
+    "version": "0.4.0",
     "min_server_version": "6.3.0",
     "server": {
         "executables": {
@@ -121,7 +121,7 @@
                 "key": "ExcludeChannels",
                 "display_name": "Exclude channels:",
                 "type": "text",
-                "help_text": "Comma separated list of channel names or IDs that are excluded from auto-archiving.",
+                "help_text": "Comma separated list of channel names (case sensitive) or IDs that are excluded from auto-archiving.",
                 "placeholder": "",
                 "default": ""
             },
