@@ -1,13 +1,13 @@
 {
-    "id": "com.mattermost.plugin-starter-template",
-    "name": "Plugin Starter Template",
-    "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
-    "homepage_url": "https://github.com/mattermost/mattermost-plugin-starter-template",
-    "support_url": "https://github.com/mattermost/mattermost-plugin-starter-template/issues",
-    "release_notes_url": "https://github.com/mattermost/mattermost-plugin-starter-template/releases/tag/v0.1.0",
-    "icon_path": "assets/starter-template-icon.svg",
-    "version": "0.1.0",
-    "min_server_version": "6.2.1",
+    "id": "mattermost-plugin-retention-tooling",
+    "name": "Data Retention Tools Plugin",
+    "description": "Provides additional tools for data retention.",
+    "homepage_url": "https://github.com/mattermost/mattermost-plugin-retention-tooling",
+    "support_url": "https://github.com/mattermost/mattermost-plugin-retention-tooling/issues",
+    "release_notes_url": "https://github.com/mattermost/mattermost-plugin-retention-tooling/releases/tag/v0.4.0",
+    "icon_path": "assets/archiver.svg",
+    "version": "0.4.0",
+    "min_server_version": "6.3.0",
     "server": {
         "executables": {
             "linux-amd64": "server/dist/plugin-linux-amd64",
@@ -17,12 +17,121 @@
             "windows-amd64": "server/dist/plugin-windows-amd64.exe"
         }
     },
-    "webapp": {
-        "bundle_path": "webapp/dist/main.js"
-    },
     "settings_schema": {
         "header": "",
         "footer": "",
-        "settings": []
+        "settings": [
+            {
+                "key": "EnableChannelArchiver",
+                "display_name": "Enable Channel Archiver:",
+                "type": "bool",
+                "help_text": "When enabled the Channel Archiver will run periodically to archive stale channels.",
+                "placeholder": "",
+                "default": false
+            },
+            {
+                "key": "EnableChannelArchiverDryRunMode",
+                "display_name": "Archiver dry run mode:",
+                "type": "bool",
+                "help_text": "When enabled the Channel Archiver won't automatically archive stale channels. Stale channels will be posted to the configured admin channel.",
+                "placeholder": "",
+                "default": false
+            },
+
+            {
+                "key": "AdminChannel",
+                "display_name": "Admin channel:",
+                "type": "text",
+                "help_text": "Channel ID where the Channel Archiver will post archiver job updates.",
+                "default": ""
+            },
+            {
+                "key": "AgeInDays",
+                "display_name": "Days of inactivity:",
+                "type": "number",
+                "help_text": "Number of days of inactivity for a channel to be considered stale (minimum 30).",
+                "default": 365
+            },
+            {
+                "key": "Frequency",
+                "display_name": "Frequency:",
+                "type": "dropdown",
+                "help_text": "Determines how often the Channel Archiver is run.",
+                "default": "monthly",
+                "options": [
+                    {
+                        "display_name": "Monthly", 
+                        "value": "monthly"
+                    },
+                    {
+                        "display_name": "Daily", 
+                        "value": "daily"
+                    },
+                    {
+                        "display_name": "Weekly", 
+                        "value": "weekly"
+                    }
+                ]
+            },
+            {
+                "key": "DayOfWeek",
+                "display_name": "Day of week:",
+                "type": "dropdown",
+                "help_text": "Determines what day of the week the Channel Archiver is run when Frequency is Monthly or Weekly.",
+                "default": "1",
+                "options": [
+                    {
+                        "display_name": "Sunday", 
+                        "value": "0"
+                    },
+                    {
+                        "display_name": "Monday", 
+                        "value": "1"
+                    },
+                    {
+                        "display_name": "Tuesday", 
+                        "value": "2"
+                    },
+                    {
+                        "display_name": "Wednesday", 
+                        "value": "3"
+                    },
+                    {
+                        "display_name": "Thursday", 
+                        "value": "4"
+                    },
+                    {
+                        "display_name": "Friday", 
+                        "value": "5"
+                    },
+                    {
+                        "display_name": "Saturday", 
+                        "value": "6"
+                    }                                        
+                ]
+            },            
+            {
+                "key": "TimeOfDay",
+                "display_name": "Time of day:",
+                "type": "text",
+                "help_text": "Time to run the Channel Archiver. Format: 'h:mmam/pm ±HHMM' (e.g. '1:00am -0700' for 1 AM Pacific, '9:30pm +0100' for 9:30 PM Central Europe, '2:00pm +0000' for 2 PM UTC). The timezone offset is required.",
+                "default": "1:00am -0700"
+            },            
+            {
+                "key": "ExcludeChannels",
+                "display_name": "Exclude channels:",
+                "type": "text",
+                "help_text": "Comma separated list of channel names (case sensitive) or IDs that are excluded from auto-archiving.",
+                "placeholder": "",
+                "default": ""
+            },
+            {
+                "key": "BatchSize",
+                "display_name": "Batch size:",
+                "type": "number",
+                "help_text": "Channels will be archived in batches of this size to avoid stressing the server(s) or database(s).",
+                "default": 100
+            }
+        ]
     }
 }

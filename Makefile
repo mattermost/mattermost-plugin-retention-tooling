@@ -188,15 +188,20 @@ detach: setup-attach
 
 ## Runs any lints and unit tests defined for the server and webapp, if they exist.
 .PHONY: test
-test: webapp/node_modules
+test: test-server webapp/node_modules test-webapp 
+
+## Runs unit tests defined for the server
+.PHONY: test-server
+test-server: 
 ifneq ($(HAS_SERVER),)
 	$(GO) test -v $(GO_TEST_FLAGS) ./server/...
 endif
+
+## Runs unit tests defined for the webapp
+.PHONY: test-webapp
+test-webapp: 
 ifneq ($(HAS_WEBAPP),)
 	cd webapp && $(NPM) run test;
-endif
-ifneq ($(wildcard ./build/sync/plan/.),)
-	cd ./build/sync && $(GO) test -v $(GO_TEST_FLAGS) ./...
 endif
 
 ## Creates a coverage report for the server code.
