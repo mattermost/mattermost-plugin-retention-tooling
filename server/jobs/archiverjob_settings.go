@@ -87,12 +87,14 @@ func parseChannelArchiverJobSettings(cfg *config.Configuration) (*ChannelArchive
 	}
 
 	return &ChannelArchiverJobSettings{
-		EnableChannelArchiver: cfg.EnableChannelArchiver,
-		AgeInDays:             cfg.AgeInDays,
-		Frequency:             freq,
-		DayOfWeek:             dow,
-		TimeOfDay:             tod,
-		ExcludeChannels:       excludes,
-		AdminChannel:          cfg.AdminChannel,
+		EnableChannelArchiver:           cfg.EnableChannelArchiver,
+		EnableChannelArchiverDryRunMode: cfg.EnableChannelArchiverDryRunMode,
+		AgeInDays:                       cfg.AgeInDays,
+		Frequency:                       freq,
+		DayOfWeek:                       dow,
+		TimeOfDay:                       tod,
+		ExcludeChannels:                 excludes,
+		BatchSize:                       cfg.BatchSize,
+		AdminChannel:                    cfg.AdminChannel,
 	}, nil
 }
