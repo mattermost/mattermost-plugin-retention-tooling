@@ -45,7 +45,7 @@ func New(src SQLStoreSource, logger Logger) (*SQLStore, error) {
 		builder = builder.PlaceholderFormat(sq.Dollar)
 	}
 
-	if src.DriverName() == model.DatabaseDriverMysql {
+	if src.DriverName() == "mysql" {
 		db.MapperFunc(func(s string) string { return s })
 	}
 
