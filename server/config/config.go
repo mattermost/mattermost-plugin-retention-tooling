@@ -58,19 +58,19 @@ func (c *Configuration) Clone() *Configuration {
 	return &clone
 }
 
-func ParseInt(s string, min int, max int) (int, error) {
+func ParseInt(s string, minVal int, maxVal int) (int, error) {
 	i64, err := strconv.ParseInt(s, 10, 32)
 	if err != nil {
 		return 0, err
 	}
 	i := int(i64)
 
-	if i < min {
-		return 0, fmt.Errorf("number must be greater than or equal to %d", min)
+	if i < minVal {
+		return 0, fmt.Errorf("number must be greater than or equal to %d", minVal)
 	}
 
-	if i > max {
-		return 0, fmt.Errorf("number must be less than or equal to %d", max)
+	if i > maxVal {
+		return 0, fmt.Errorf("number must be less than or equal to %d", maxVal)
 	}
 	return i, nil
 }
