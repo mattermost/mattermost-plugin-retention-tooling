@@ -49,3 +49,40 @@ Will auto-archive any channels that have had no activity for more than some conf
 
 **Admin channel**: Channel ID where the Channel Archiver posts job updates. When dry run mode is enabled, stale channel reports are posted here. When channels are archived, a summary of archived channels is posted to this channel.
 
+#### Slash Commands
+
+The `/channel-archiver` slash command allows system administrators to manually manage stale channels. The following subcommands are available:
+
+##### `/channel-archiver archive`
+
+Archives channels that have been inactive for the specified number of days.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `--days` | Yes | Number of days of inactivity for a channel to be considered stale (min: 30, max: 10000) |
+| `--batch-size` | No | Number of channels to archive per batch (default: 100, min: 10, max: 10000) |
+| `--exclude` | No | Comma-separated list of channel names or IDs to exclude (no spaces). This is combined with the **Exclude channels** setting from the plugin configuration. |
+
+Example:
+```
+/channel-archiver archive --days 90 --batch-size 50 --exclude general,town-square
+```
+
+##### `/channel-archiver list`
+
+Lists channels that would be archived without actually archiving them. Useful for previewing which channels are considered stale.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `--days` | Yes | Number of days of inactivity for a channel to be considered stale (min: 30, max: 10000) |
+| `--exclude` | No | Comma-separated list of channel names or IDs to exclude (no spaces). This is combined with the **Exclude channels** setting from the plugin configuration. |
+
+Example:
+```
+/channel-archiver list --days 90
+```
+
+##### `/channel-archiver help`
+
+Displays help text with available subcommands.
+
