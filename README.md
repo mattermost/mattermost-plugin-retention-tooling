@@ -61,7 +61,7 @@ Archives channels that have been inactive for the specified number of days.
 |-----------|----------|-------------|
 | `--days` | Yes | Number of days of inactivity for a channel to be considered stale (min: 30, max: 10000) |
 | `--batch-size` | No | Number of channels to archive per batch (default: 100, min: 10, max: 10000) |
-| `--exclude` | No | Comma-separated list of channel names or IDs to exclude (no spaces) |
+| `--exclude` | No | Comma-separated list of channel names or IDs to exclude (no spaces). This is combined with the **Exclude channels** setting from the plugin configuration. |
 
 Example:
 ```
@@ -75,7 +75,7 @@ Lists channels that would be archived without actually archiving them. Useful fo
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | `--days` | Yes | Number of days of inactivity for a channel to be considered stale (min: 30, max: 10000) |
-| `--exclude` | No | Comma-separated list of channel names or IDs to exclude (no spaces) |
+| `--exclude` | No | Comma-separated list of channel names or IDs to exclude (no spaces). This is combined with the **Exclude channels** setting from the plugin configuration. |
 
 Example:
 ```
