@@ -77,7 +77,7 @@ func (ss *SQLStore) GetStaleChannels(opts StaleChannelOpts, page int, pageSize i
 	query = query.Where(sq.Eq{"ch.Type": channelTypes})
 
 	if page > 0 {
-		query = query.Offset(uint64(page * pageSize))
+		query = query.Offset(uint64(page) * uint64(pageSize)) //nolint:gosec // page and pageSize are validated to be non-negative
 	}
 
 	if pageSize > 0 {
