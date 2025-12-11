@@ -1,140 +1,88 @@
-# Plugin Starter Template [![CircleCI branch](https://img.shields.io/circleci/project/github/mattermost/mattermost-plugin-starter-template/master.svg)](https://circleci.com/gh/mattermost/mattermost-plugin-starter-template)
+# Mattermost Retention Tooling plugin ![CI](https://github.com/mattermost/mattermost-plugin-retention-tooling/actions/workflows/ci.yml/badge.svg)
 
-This plugin serves as a starting point for writing a Mattermost plugin. Feel free to base your own plugin off this repository.
+This plugin provides data retention tools to augment the [data retention capabilities](https://docs.mattermost.com/comply/data-retention-policy.html) of Mattermost Enterprise Edition.
 
-To learn more about plugins, see [our plugin documentation](https://developers.mattermost.com/extend/plugins/).
+**Not recommended for production use without Mattermost guidance. Please reach out to your Customer Success Manager to learn more.**
 
-This template requires node v16 and npm v8. You can download and install nvm to manage your node versions by following the instructions [here](https://github.com/nvm-sh/nvm). Once you've setup the project simply run `nvm i` within the root folder to use the suggested version of node.
+## Tools
 
-## Getting Started
-Use GitHub's template feature to make a copy of this repository by clicking the "Use this template" button.
+### De-activated User Clean-up
 
-Alternatively shallow clone the repository matching your plugin name:
-```
-git clone --depth 1 https://github.com/mattermost/mattermost-plugin-starter-template com.example.my-plugin
-```
+Removes a specified user from all teams and channels, meant to be used after a user is deactivated.
 
-Note that this project uses [Go modules](https://github.com/golang/go/wiki/Modules). Be sure to locate the project outside of `$GOPATH`.
-
-Edit the following files:
-1. `plugin.json` with your `id`, `name`, and `description`:
-```
-{
-    "id": "com.example.my-plugin",
-    "name": "My Plugin",
-    "description": "A plugin to enhance Mattermost."
-}
-```
-
-2. `go.mod` with your Go module path, following the `<hosting-site>/<repository>/<module>` convention:
-```
-module github.com/example/my-plugin
-```
-
-3. `.golangci.yml` with your Go module path:
-```yml
-linters-settings:
-  # [...]
-  goimports:
-    local-prefixes: github.com/example/my-plugin
-```
-
-Build your plugin:
-```
-make
-```
-
-This will produce a single plugin file (with support for multiple architectures) for upload to your Mattermost server:
+The process is started by sending an HTTP POST request to the Mattermost server at `/plugins/mattermost-plugin-retention-tooling/remove_user_from_all_teams_and_channels`. It accepts either of the following JSON request bodies:
 
 ```
-dist/com.example.my-plugin.tar.gz
+{"user_id": "someuserid"}
+
+{"username": "someusername"}
 ```
 
-## Development
+The user submitting the HTTP request must be a system admin.
 
-To avoid having to manually install your plugin, build and deploy your plugin using one of the following options. In order for the below options to work, you must first enable plugin uploads via your config.json or API and restart Mattermost.
+### Channel Archiver
 
-```json
-    "PluginSettings" : {
-        ...
-        "EnableUploads" : true
-    }
+Will auto-archive any channels that have had no activity for more than some configurable number of days.
+
+**Job**: can be configured via the system console to run monthly/weekly/daily on a specific day of the week and time of day.
+
+**Slash command**: Can be run on-demand via `/channel-archiver` slash command.
+
+#### Configuration
+
+**Days of inactivity**: Number of days a channel must be inactive before it's considered stale. Minimum value is 30 days. Default is 365 days.
+
+**Frequency**: How often the Channel Archiver job runs. Options are:
+- Monthly: Runs once per month on the specified day of week
+- Weekly: Runs once per week on the specified day of week
+- Daily: Runs every day at the specified time
+
+**Day of week**: The day of the week the job runs (applies to Monthly and Weekly frequency).
+
+**Time of day**: The time when the job runs. Format: `h:mmam/pm ±HHMM` (e.g., `1:00am -0700` for 1 AM Pacific, `9:30pm +0100` for 9:30 PM Central Europe).
+
+**Exclude channels**: Comma-separated list of channel names (case sensitive) or channel IDs that should never be archived automatically.
+
+**Batch size**: Number of channels to process in each batch. Default is 100. Adjust this value based on your server capacity.
+
+**Dry run mode**: When enabled, the Channel Archiver identifies stale channels but does not archive them automatically. Stale channel reports are posted to the configured admin channel. To archive the channels after reviewing the list, you can either use the `/channel-archiver` slash command to manually trigger archiving, or disable dry run mode so channels will be archived automatically on the next scheduled run.
+
+**Admin channel**: Channel ID where the Channel Archiver posts job updates. When dry run mode is enabled, stale channel reports are posted here. When channels are archived, a summary of archived channels is posted to this channel.
+
+#### Slash Commands
+
+The `/channel-archiver` slash command allows system administrators to manually manage stale channels. The following subcommands are available:
+
+##### `/channel-archiver archive`
+
+Archives channels that have been inactive for the specified number of days.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `--days` | Yes | Number of days of inactivity for a channel to be considered stale (min: 30, max: 10000) |
+| `--batch-size` | No | Number of channels to archive per batch (default: 100, min: 10, max: 10000) |
+| `--exclude` | No | Comma-separated list of channel names or IDs to exclude (no spaces). This is combined with the **Exclude channels** setting from the plugin configuration. |
+
+Example:
+```
+/channel-archiver archive --days 90 --batch-size 50 --exclude general,town-square
 ```
 
-### Deploying with Local Mode
+##### `/channel-archiver list`
 
-If your Mattermost server is running locally, you can enable [local mode](https://docs.mattermost.com/administration/mmctl-cli-tool.html#local-mode) to streamline deploying your plugin. Edit your server configuration as follows:
+Lists channels that would be archived without actually archiving them. Useful for previewing which channels are considered stale.
 
-```json
-{
-    "ServiceSettings": {
-        ...
-        "EnableLocalMode": true,
-        "LocalModeSocketLocation": "/var/tmp/mattermost_local.socket"
-    },
-}
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `--days` | Yes | Number of days of inactivity for a channel to be considered stale (min: 30, max: 10000) |
+| `--exclude` | No | Comma-separated list of channel names or IDs to exclude (no spaces). This is combined with the **Exclude channels** setting from the plugin configuration. |
+
+Example:
+```
+/channel-archiver list --days 90
 ```
 
-and then deploy your plugin:
-```
-make deploy
-```
+##### `/channel-archiver help`
 
-You may also customize the Unix socket path:
-```
-export MM_LOCALSOCKETPATH=/var/tmp/alternate_local.socket
-make deploy
-```
+Displays help text with available subcommands.
 
-If developing a plugin with a webapp, watch for changes and deploy those automatically:
-```
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-export MM_ADMIN_TOKEN=j44acwd8obn78cdcx7koid4jkr
-make watch
-```
-
-### Deploying with credentials
-
-Alternatively, you can authenticate with the server's API with credentials:
-```
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-export MM_ADMIN_USERNAME=admin
-export MM_ADMIN_PASSWORD=password
-make deploy
-```
-
-or with a [personal access token](https://docs.mattermost.com/developer/personal-access-tokens.html):
-```
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-export MM_ADMIN_TOKEN=j44acwd8obn78cdcx7koid4jkr
-make deploy
-```
-
-## Q&A
-
-### How do I make a server-only or web app-only plugin?
-
-Simply delete the `server` or `webapp` folders and remove the corresponding sections from `plugin.json`. The build scripts will skip the missing portions automatically.
-
-### How do I include assets in the plugin bundle?
-
-Place them into the `assets` directory. To use an asset at runtime, build the path to your asset and open as a regular file:
-
-```go
-bundlePath, err := p.API.GetBundlePath()
-if err != nil {
-    return errors.Wrap(err, "failed to get bundle path")
-}
-
-profileImage, err := ioutil.ReadFile(filepath.Join(bundlePath, "assets", "profile_image.png"))
-if err != nil {
-    return errors.Wrap(err, "failed to read profile image")
-}
-
-if appErr := p.API.SetProfileImage(userID, profileImage); appErr != nil {
-    return errors.Wrap(err, "failed to set profile image")
-}
-```
-
-### How do I build the plugin with unminified JavaScript?
-Setting the `MM_DEBUG` environment variable will invoke the debug builds. The simplist way to do this is to simply include this variable in your calls to `make` (e.g. `make dist MM_DEBUG=1`).
